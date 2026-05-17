@@ -3,7 +3,6 @@ import Header from "./components/layout/header";
 import axios from "./util/axios.customize";
 import { useContext, useEffect } from "react";
 import { AuthContext } from "./components/context/auth.context";
-import { Spin } from "antd";
 
 function App() {
     const { setAuth, appLoading, setAppLoading } = useContext(AuthContext);
@@ -24,10 +23,13 @@ function App() {
     }, []);
 
     return (
-        <div>
+        <div className="min-h-screen bg-gray-50">
             {appLoading === true ?
-                <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)" }}>
-                    <Spin />
+                <div className="fixed inset-0 flex items-center justify-center bg-white z-50">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-500 rounded-full animate-spin"></div>
+                        <p className="text-gray-400 text-sm">Đang tải...</p>
+                    </div>
                 </div>
                 :
                 <>

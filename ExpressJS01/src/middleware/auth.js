@@ -2,8 +2,14 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 
 const auth = (req, res, next) => {
+    // Exact match whitelist
     const white_lists = ["/", "/register", "/login", "/forgot-password", "/reset-password"];
-    if (white_lists.find(item => '/v1/api' + item === req.originalUrl)) {
+    // Prefix match whitelist (public product/category APIs)
+    const public_prefixes = ["/products", "/categories", "/promotion-products", "/new-products", "/bestseller-products", "/similar-products"];
+
+    const path = req.originalUrl.replace('/v1/api', '').split('?')[0]; // bỏ query string
+
+    if (white_lists.includes(path) || public_prefixes.some(prefix => path.startsWith(prefix))) {
         next();
     } else {
         if (req?.headers?.authorization?.split(' ')?.[1]) {
@@ -25,3 +31,4 @@ const auth = (req, res, next) => {
     }
 }
 module.exports = auth;
+

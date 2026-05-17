@@ -8,6 +8,8 @@ import UserPage from './pages/user.jsx';
 import HomePage from './pages/home.jsx';
 import LoginPage from './pages/login.jsx';
 import ForgotPasswordPage from './pages/forgotPassword.jsx';
+import ProductDetailPage from './pages/productDetail.jsx';
+import SearchPage from './pages/search.jsx';
 import { AuthWrapper } from './components/context/auth.context.jsx';
 
 const router = createBrowserRouter([
@@ -16,7 +18,9 @@ const router = createBrowserRouter([
         element: <App />,
         children: [
             { index: true, element: <HomePage /> },
-            { path: "user", element: <UserPage /> }
+            { path: "user", element: <UserPage /> },
+            { path: "product/:slug", element: <ProductDetailPage /> },
+            { path: "search", element: <SearchPage /> },
         ]
     },
     { path: "register", element: <RegisterPage /> },
