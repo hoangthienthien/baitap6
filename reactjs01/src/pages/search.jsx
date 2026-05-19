@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getProductsApi, getCategoriesApi } from '../util/api';
 import ProductCard from '../components/product/ProductCard';
@@ -9,7 +9,10 @@ const SearchPage = () => {
     const [categories, setCategories] = useState([]);
     const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [filterOpen, setFilterOpen] = useState(false);
+    const observerRef = useRef(null);
+    const loadMoreRef = useRef(null);
 
     // Filter state
     const [search, setSearch] = useState(searchParams.get('search') || '');
@@ -37,12 +40,13 @@ const SearchPage = () => {
         setIsBestSeller(searchParams.get('isBestSeller') || '');
     }, [searchParams]);
 
+    // When search params change, reset and fetch first page
     useEffect(() => {
-        fetchProducts();
+        setProducts([]);
+        fetchProducts(1, true);
     }, [searchParams]);
 
-    const fetchProducts = async (page = searchParams.get('page') || 1) => {
-        setLoading(true);
+    const buildParams = (page) => {
         const params = {};
         const s = searchParams.get('search'); if (s) params.search = s;
         const c = searchParams.get('category'); if (c) params.category = c;
@@ -53,14 +57,58 @@ const SearchPage = () => {
         const ib = searchParams.get('isBestSeller'); if (ib) params.isBestSeller = ib;
         params.page = page;
         params.limit = 12;
+        return params;
+    };
 
+    const fetchProducts = async (page = 1, isReset = false) => {
+        if (isReset) {
+            setLoading(true);
+        } else {
+            setLoadingMore(true);
+        }
+
+        const params = buildParams(page);
         const res = await getProductsApi(params);
+
         if (res?.EC === 0) {
-            setProducts(res.data);
+            if (isReset) {
+                setProducts(res.data);
+            } else {
+                setProducts(prev => [...prev, ...res.data]);
+            }
             setPagination(res.pagination);
         }
+
         setLoading(false);
+        setLoadingMore(false);
     };
+
+    // Lazy loading: IntersectionObserver to load more when scrolling to bottom
+    const handleObserver = useCallback((entries) => {
+        const target = entries[0];
+        if (target.isIntersecting && !loadingMore && !loading && pagination.page < pagination.totalPages) {
+            const nextPage = pagination.page + 1;
+            fetchProducts(nextPage, false);
+        }
+    }, [loadingMore, loading, pagination]);
+
+    useEffect(() => {
+        if (observerRef.current) observerRef.current.disconnect();
+
+        observerRef.current = new IntersectionObserver(handleObserver, {
+            root: null,
+            rootMargin: '200px',
+            threshold: 0.1,
+        });
+
+        if (loadMoreRef.current) {
+            observerRef.current.observe(loadMoreRef.current);
+        }
+
+        return () => {
+            if (observerRef.current) observerRef.current.disconnect();
+        };
+    }, [handleObserver]);
 
     const applyFilters = () => {
         const params = new URLSearchParams();
@@ -127,6 +175,49 @@ const SearchPage = () => {
                         </button>
                     </div>
                 </div>
+
+                {/* Category quick filter chips */}
+                {categories.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-6">
+                        <button
+                            onClick={() => {
+                                setCategory('');
+                                const p = new URLSearchParams(searchParams);
+                                p.delete('category');
+                                setSearchParams(p);
+                            }}
+                            className={`px-4 py-2 text-sm font-medium rounded-full border transition-all ${
+                                !searchParams.get('category')
+                                    ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg shadow-indigo-200'
+                                    : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
+                            }`}
+                        >
+                            Tất cả
+                        </button>
+                        {categories.map(cat => (
+                            <button
+                                key={cat._id}
+                                onClick={() => {
+                                    setCategory(cat.slug);
+                                    const p = new URLSearchParams(searchParams);
+                                    p.set('category', cat.slug);
+                                    p.delete('page');
+                                    setSearchParams(p);
+                                }}
+                                className={`px-4 py-2 text-sm font-medium rounded-full border transition-all flex items-center gap-2 ${
+                                    searchParams.get('category') === cat.slug
+                                        ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg shadow-indigo-200'
+                                        : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
+                                }`}
+                            >
+                                {cat.image && (
+                                    <img src={cat.image} alt={cat.name} className="w-5 h-5 rounded-full object-cover" />
+                                )}
+                                {cat.name}
+                            </button>
+                        ))}
+                    </div>
+                )}
 
                 {/* Search + Filters panel */}
                 {filterOpen && (
@@ -206,7 +297,10 @@ const SearchPage = () => {
                 {/* Products grid */}
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
-                        <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-500 rounded-full animate-spin"></div>
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-500 rounded-full animate-spin"></div>
+                            <p className="text-gray-400 text-sm">Đang tải sản phẩm...</p>
+                        </div>
                     </div>
                 ) : products.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -219,24 +313,39 @@ const SearchPage = () => {
                 ) : (
                     <>
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                            {products.map(product => <ProductCard key={product._id} product={product} />)}
+                            {products.map((product, index) => (
+                                <div
+                                    key={`${product._id}-${index}`}
+                                    className="animate-fadeIn"
+                                    style={{ animationDelay: `${(index % 12) * 50}ms` }}
+                                >
+                                    <ProductCard product={product} />
+                                </div>
+                            ))}
                         </div>
 
-                        {/* Pagination */}
-                        {pagination.totalPages > 1 && (
-                            <div className="flex justify-center gap-2 mt-10">
-                                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(page => (
-                                    <button
-                                        key={page}
-                                        onClick={() => { const p = new URLSearchParams(searchParams); p.set('page', page); setSearchParams(p); }}
-                                        className={`w-10 h-10 rounded-xl text-sm font-medium transition-all ${page === pagination.page
-                                            ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-200'
-                                            : 'bg-white text-gray-600 border border-gray-200 hover:border-indigo-200'
-                                            }`}
-                                    >{page}</button>
-                                ))}
-                            </div>
-                        )}
+                        {/* Lazy loading sentinel & status */}
+                        <div ref={loadMoreRef} className="flex flex-col items-center py-10">
+                            {loadingMore && (
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-500 rounded-full animate-spin"></div>
+                                    <span className="text-sm text-gray-500">Đang tải thêm sản phẩm...</span>
+                                </div>
+                            )}
+                            {!loadingMore && pagination.page >= pagination.totalPages && products.length > 0 && (
+                                <div className="flex flex-col items-center gap-2">
+                                    <div className="w-12 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                                    <p className="text-sm text-gray-400">
+                                        Đã hiển thị tất cả {pagination.total} sản phẩm
+                                    </p>
+                                </div>
+                            )}
+                            {!loadingMore && pagination.page < pagination.totalPages && (
+                                <p className="text-xs text-gray-400">
+                                    Đang hiển thị {products.length} / {pagination.total} sản phẩm — Cuộn xuống để xem thêm
+                                </p>
+                            )}
+                        </div>
                     </>
                 )}
             </div>

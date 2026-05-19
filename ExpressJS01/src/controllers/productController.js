@@ -1,7 +1,8 @@
 const {
     getProductsService, getProductBySlugService, getSimilarProductsService,
     getCategoriesService, getPromotionProductsService,
-    getNewProductsService, getBestSellerProductsService
+    getNewProductsService, getBestSellerProductsService,
+    getMostViewedProductsService
 } = require('../services/productService');
 
 const getProducts = async (req, res) => {
@@ -40,8 +41,13 @@ const getBestSellerProducts = async (req, res) => {
     return res.status(200).json(data);
 };
 
+const getMostViewedProducts = async (req, res) => {
+    const data = await getMostViewedProductsService(req.query.limit);
+    return res.status(200).json(data);
+};
+
 module.exports = {
     getProducts, getProductBySlug, getSimilarProducts,
     getCategories, getPromotionProducts,
-    getNewProducts, getBestSellerProducts
+    getNewProducts, getBestSellerProducts, getMostViewedProducts
 };

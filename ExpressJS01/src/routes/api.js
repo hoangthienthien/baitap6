@@ -1,6 +1,6 @@
 const express = require('express');
 const { createUser, handleLogin, getUser, getAccount, forgotPassword, resetPassword } = require('../controllers/userController');
-const { getProducts, getProductBySlug, getSimilarProducts, getCategories, getPromotionProducts, getNewProducts, getBestSellerProducts } = require('../controllers/productController');
+const { getProducts, getProductBySlug, getSimilarProducts, getCategories, getPromotionProducts, getNewProducts, getBestSellerProducts, getMostViewedProducts } = require('../controllers/productController');
 const auth = require('../middleware/auth');
 const delay = require('../middleware/delay');
 
@@ -28,5 +28,6 @@ routerAPI.get("/categories", getCategories);
 routerAPI.get("/promotion-products", getPromotionProducts);
 routerAPI.get("/new-products", getNewProducts);
 routerAPI.get("/bestseller-products", getBestSellerProducts);
+routerAPI.get("/most-viewed-products", getMostViewedProducts);
 
 module.exports = routerAPI;

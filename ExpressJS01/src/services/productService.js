@@ -137,8 +137,22 @@ const getBestSellerProductsService = async (limit = 8) => {
     }
 };
 
+// Lấy sản phẩm xem nhiều nhất
+const getMostViewedProductsService = async (limit = 10) => {
+    try {
+        const products = await Product.find({})
+            .populate('category', 'name slug')
+            .sort({ viewCount: -1 }).limit(Number(limit));
+        return { EC: 0, data: products };
+    } catch (error) {
+        console.log(error);
+        return { EC: 1, EM: 'Lỗi' };
+    }
+};
+
 module.exports = {
     getProductsService, getProductBySlugService, getSimilarProductsService,
     getCategoriesService, getPromotionProductsService,
-    getNewProductsService, getBestSellerProductsService
+    getNewProductsService, getBestSellerProductsService,
+    getMostViewedProductsService
 };

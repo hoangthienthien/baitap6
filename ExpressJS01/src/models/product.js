@@ -15,7 +15,8 @@ const productSchema = new mongoose.Schema({
     isBestSeller: { type: Boolean, default: false },
     specs: { type: mongoose.Schema.Types.Mixed, default: {} },
     rating: { type: Number, default: 0 },
-    reviewCount: { type: Number, default: 0 }
+    reviewCount: { type: Number, default: 0 },
+    viewCount: { type: Number, default: 0 }
 }, { timestamps: true });
 
 // Tạo text index cho tìm kiếm

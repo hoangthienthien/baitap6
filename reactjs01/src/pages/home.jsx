@@ -1,28 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getPromotionProductsApi, getNewProductsApi, getBestSellerProductsApi, getCategoriesApi } from '../util/api';
+import { getPromotionProductsApi, getNewProductsApi, getBestSellerProductsApi, getCategoriesApi, getMostViewedProductsApi } from '../util/api';
 import ProductSection from '../components/product/ProductSection';
+import ProductHorizontalSection from '../components/product/ProductHorizontalSection';
 
 const HomePage = () => {
     const [promoProducts, setPromoProducts] = useState([]);
     const [newProducts, setNewProducts] = useState([]);
     const [bestSellers, setBestSellers] = useState([]);
+    const [mostViewed, setMostViewed] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-            const [promo, newest, best, cats] = await Promise.all([
+            const [promo, newest, best, cats, viewed] = await Promise.all([
                 getPromotionProductsApi(8),
                 getNewProductsApi(8),
-                getBestSellerProductsApi(8),
-                getCategoriesApi()
+                getBestSellerProductsApi(10),
+                getCategoriesApi(),
+                getMostViewedProductsApi(10)
             ]);
             if (promo?.EC === 0) setPromoProducts(promo.data);
             if (newest?.EC === 0) setNewProducts(newest.data);
             if (best?.EC === 0) setBestSellers(best.data);
             if (cats?.EC === 0) setCategories(cats.data);
+            if (viewed?.EC === 0) setMostViewed(viewed.data);
             setLoading(false);
         };
         fetchData();
@@ -96,11 +100,26 @@ const HomePage = () => {
             {/* Khuyến mãi */}
             <ProductSection title="🔥 Khuyến mãi hot" icon="" products={promoProducts} bgGradient="from-red-50 to-orange-50" />
 
-            {/* Mới nhất */}
-            <ProductSection title="✨ Sản phẩm mới" icon="" products={newProducts} bgGradient="from-emerald-50 to-teal-50" />
+            {/* Top 10 Bán chạy nhất - Horizontal Swiper */}
+            <ProductHorizontalSection
+                title="🏆 Top 10 Bán chạy nhất"
+                icon=""
+                products={bestSellers}
+                bgGradient="from-amber-50 to-yellow-50"
+                accentColor="amber"
+            />
 
-            {/* Bán chạy nhất */}
-            <ProductSection title="🏆 Bán chạy nhất" icon="" products={bestSellers} bgGradient="from-amber-50 to-yellow-50" />
+            {/* Top Sản phẩm xem nhiều nhất - Horizontal Swiper */}
+            <ProductHorizontalSection
+                title="👁️ Sản phẩm xem nhiều nhất"
+                icon=""
+                products={mostViewed}
+                bgGradient="from-emerald-50 to-teal-50"
+                accentColor="emerald"
+            />
+
+            {/* Mới nhất */}
+            <ProductSection title="✨ Sản phẩm mới" icon="" products={newProducts} bgGradient="from-indigo-50 to-blue-50" />
 
             {/* Footer */}
             <footer className="bg-gray-900 text-gray-300 py-12 mt-8">

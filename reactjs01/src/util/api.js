@@ -47,9 +47,13 @@ const getBestSellerProductsApi = (limit = 8) => {
     return axios.get(`/v1/api/bestseller-products?limit=${limit}`);
 }
 
+const getMostViewedProductsApi = (limit = 10) => {
+    return axios.get(`/v1/api/most-viewed-products?limit=${limit}`);
+}
+
 export {
     createUserApi, loginApi, getUserApi,
     getProductsApi, getProductBySlugApi, getSimilarProductsApi,
     getCategoriesApi, getPromotionProductsApi,
-    getNewProductsApi, getBestSellerProductsApi
+    getNewProductsApi, getBestSellerProductsApi, getMostViewedProductsApi
 };
