@@ -21,8 +21,8 @@ export const OrderDetailPage = () => {
     setIsLoading(true);
     try {
       const res = await getOrderDetailAPI(orderId);
-      if (res && res.order) {
-        setOrder(res.order);
+      if (res && res.data) {
+        setOrder(res.data);
       }
     } catch (err) {
       console.error('Failed to load order details:', err);

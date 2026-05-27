@@ -13,10 +13,8 @@ export const OrdersPage = () => {
     const fetchOrders = async () => {
       try {
         const res = await getOrdersAPI();
-        if (res && res.orders) {
-          setOrders(res.orders);
-        } else if (res && Array.isArray(res)) {
-          setOrders(res);
+        if (res && res.data) {
+          setOrders(res.data);
         }
       } catch (err) {
         console.error('Failed to load orders:', err);
