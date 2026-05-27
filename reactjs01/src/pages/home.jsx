@@ -14,8 +14,8 @@ export const Home = () => {
     const loadDeals = async () => {
       try {
         const res = await getPromotionProductsAPI();
-        if (res && res.products) {
-          setDeals(res.products.slice(0, 4));
+        if (res && res.data) {
+          setDeals(res.data.slice(0, 4));
         } else if (res && Array.isArray(res)) {
           setDeals(res.slice(0, 4));
         }

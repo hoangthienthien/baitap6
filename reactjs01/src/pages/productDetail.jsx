@@ -24,10 +24,10 @@ export const ProductDetailPage = () => {
       setIsLoading(true);
       try {
         const res = await getProductBySlugAPI(slug);
-        if (res && res.product) {
-          setProduct(res.product);
+        if (res && res.data) {
+          setProduct(res.data);
           // Set initial defaults
-          const p = res.product;
+          const p = res.data;
           setActiveImage(p.image || (p.images && p.images[0]) || '');
           setSelectedColor(p.colors?.[0] || 'Standard');
           setSelectedStorage(p.storage?.[0] || '128GB');

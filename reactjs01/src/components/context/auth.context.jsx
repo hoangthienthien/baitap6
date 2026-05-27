@@ -30,8 +30,8 @@ export const AuthProvider = ({ children }) => {
       }
       try {
         const response = await getAccountAPI();
-        if (response && response.user) {
-          setUser(response.user);
+        if (response && response.email) {
+          setUser(response);
           setIsAuthenticated(true);
         } else {
           logout();

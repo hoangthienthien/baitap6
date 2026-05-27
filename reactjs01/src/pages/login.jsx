@@ -14,17 +14,19 @@ export const LoginPage = () => {
     setIsLoading(true);
     try {
       const res = await loginUserAPI(values.email, values.password);
-      if (res && res.access_token) {
+      if (res && res.EC === 0) {
         localStorage.setItem('access_token', res.access_token);
         
         // Fetch account details to sync Context
         const acc = await getAccountAPI();
-        if (acc && acc.user) {
-          setUser(acc.user);
+        if (acc && acc.email) {
+          setUser(acc);
           setIsAuthenticated(true);
           message.success('Đăng nhập thành công! Chào mừng bạn quay trở lại.');
           navigate('/');
         }
+      } else {
+        message.error(res?.EM || 'Email hoặc mật khẩu không chính xác!');
       }
     } catch (err) {
       message.error(err.message || 'Email hoặc mật khẩu không chính xác!');

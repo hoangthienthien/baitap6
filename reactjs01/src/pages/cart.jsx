@@ -25,8 +25,8 @@ export const CartPage = () => {
     const loadSuggestions = async () => {
       try {
         const res = await getProductsAPI({ limit: 4 });
-        if (res && res.products) {
-          setSuggestions(res.products.slice(0, 4));
+        if (res && res.data) {
+          setSuggestions(res.data.slice(0, 4));
         } else if (res && Array.isArray(res)) {
           setSuggestions(res.slice(0, 4));
         }

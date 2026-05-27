@@ -72,9 +72,9 @@ export const SearchPage = () => {
         }
 
         const res = await getProductsAPI(query);
-        if (res) {
-          setProducts(res.products || res.data || []);
-          setTotalProducts(res.total || (res.products ? res.products.length : 0));
+        if (res && res.data) {
+          setProducts(res.data);
+          setTotalProducts(res.pagination?.total || res.data.length);
         }
       } catch (err) {
         console.error('Failed to load products:', err);
