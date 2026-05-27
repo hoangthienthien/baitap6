@@ -124,8 +124,8 @@ export const CartPage = () => {
                     <div className="flex items-center gap-4">
                       {/* Count toggles */}
                       <div className="flex items-center bg-slate-50 border border-slate-100 rounded-full px-1.5 py-1">
-                        <button 
-                          onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                         <button 
+                          onClick={() => updateQuantity(item.productId?._id || item.productId, item.quantity - 1)}
                           className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-gray-500 hover:bg-white hover:shadow-sm hover:text-indigo-600 transition-all cursor-pointer"
                         >
                           -
@@ -134,7 +134,7 @@ export const CartPage = () => {
                           {item.quantity}
                         </span>
                         <button 
-                          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                          onClick={() => updateQuantity(item.productId?._id || item.productId, item.quantity + 1)}
                           className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-gray-500 hover:bg-white hover:shadow-sm hover:text-indigo-600 transition-all cursor-pointer"
                         >
                           +
@@ -143,7 +143,7 @@ export const CartPage = () => {
 
                       {/* Remove Button */}
                       <button 
-                        onClick={() => removeFromCart(item.productId)}
+                        onClick={() => removeFromCart(item.productId?._id || item.productId)}
                         className="flex items-center gap-1.5 text-slate-400 hover:text-rose-600 text-[13px] font-bold py-2 px-3 rounded-xl transition-colors cursor-pointer"
                       >
                         <DeleteOutlined className="text-base" />
