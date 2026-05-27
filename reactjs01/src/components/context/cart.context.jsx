@@ -28,8 +28,8 @@ export const CartProvider = ({ children }) => {
     setIsLoading(true);
     try {
       const res = await getCartAPI();
-      if (res && res.cart && res.cart.items) {
-        setCartItems(res.cart.items);
+      if (res && res.data && res.data.items) {
+        setCartItems(res.data.items);
       } else {
         setCartItems([]);
       }
@@ -59,10 +59,13 @@ export const CartProvider = ({ children }) => {
         storage,
         color
       );
-      if (res) {
+      if (res && res.EC === 0) {
         message.success(`Đã thêm ${product.name} vào giỏ hàng!`);
         await fetchCart();
         return true;
+      } else {
+        message.error(res?.EM || 'Lỗi thêm sản phẩm vào giỏ hàng');
+        return false;
       }
     } catch (err) {
       message.error(err.message || 'Lỗi thêm sản phẩm vào giỏ hàng');
@@ -76,8 +79,10 @@ export const CartProvider = ({ children }) => {
     }
     try {
       const res = await updateCartItemAPI(productId, newQty);
-      if (res) {
+      if (res && res.EC === 0) {
         await fetchCart();
+      } else {
+        message.error(res?.EM || 'Lỗi cập nhật số lượng sản phẩm');
       }
     } catch (err) {
       message.error('Lỗi cập nhật số lượng sản phẩm');
@@ -87,9 +92,11 @@ export const CartProvider = ({ children }) => {
   const removeFromCart = async (productId) => {
     try {
       const res = await removeCartItemAPI(productId);
-      if (res) {
+      if (res && res.EC === 0) {
         message.success('Đã xóa sản phẩm khỏi giỏ hàng!');
         await fetchCart();
+      } else {
+        message.error(res?.EM || 'Lỗi xóa sản phẩm');
       }
     } catch (err) {
       message.error('Lỗi xóa sản phẩm');
