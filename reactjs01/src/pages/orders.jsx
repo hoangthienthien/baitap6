@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getOrdersAPI } from '../util/api';
-import { formatPrice } from '../util/helpers';
+import { formatPrice, mapOrderStatus } from '../util/helpers';
 import { Spin, Table, Tag, Button, Empty } from 'antd';
 import { ShoppingOutlined, RightOutlined } from '@ant-design/icons';
 
@@ -24,23 +24,6 @@ export const OrdersPage = () => {
     };
     fetchOrders();
   }, []);
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Đã giao':
-        return 'success';
-      case 'Đang giao':
-        return 'processing';
-      case 'Đã xác nhận':
-        return 'indigo';
-      case 'Mới':
-        return 'warning';
-      case 'Đã hủy':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-12 text-left space-y-8">
@@ -69,8 +52,8 @@ export const OrdersPage = () => {
                   <span className="font-extrabold text-[15px] text-indigo-950">
                     Order ID: #{order._id.substring(order._id.length - 8).toUpperCase()}
                   </span>
-                  <Tag color={getStatusColor(order.status)} className="font-bold border-0 px-3 py-0.5 rounded-full text-[11px] uppercase tracking-wider">
-                    {order.status}
+                  <Tag color={mapOrderStatus(order.status).color} className="font-bold border-0 px-3 py-0.5 rounded-full text-[11px] uppercase tracking-wider">
+                    {mapOrderStatus(order.status).label}
                   </Tag>
                 </div>
                 <p className="text-[13px] font-semibold text-slate-400">

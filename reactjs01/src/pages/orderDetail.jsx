@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getOrderDetailAPI, cancelOrderAPI, confirmOrderAPI } from '../util/api';
-import { formatPrice } from '../util/helpers';
+import { formatPrice, mapOrderStatus } from '../util/helpers';
 import { Steps, Spin, Button, message, Tag } from 'antd';
 import { 
   ArrowLeftOutlined, 
@@ -87,10 +87,11 @@ export const OrderDetailPage = () => {
   // Get index for Steps
   const getStepIndex = (status) => {
     switch (status) {
-      case 'Mới': return 0;
-      case 'Đã xác nhận': return 1;
-      case 'Đang giao': return 2;
-      case 'Đã giao': return 3;
+      case 'new': return 0;
+      case 'confirmed': return 1;
+      case 'preparing': return 1;
+      case 'shipping': return 2;
+      case 'delivered': return 3;
       default: return 0;
     }
   };
@@ -118,7 +119,7 @@ export const OrderDetailPage = () => {
           <p className="text-slate-400 text-sm mt-1 font-medium">Order ID: #{order._id.toUpperCase()}</p>
         </div>
         <div className="flex gap-2">
-          {order.status === 'Mới' && (
+          {order.status === 'new' && (
             <Button
               danger
               onClick={handleCancelOrder}
@@ -128,7 +129,7 @@ export const OrderDetailPage = () => {
               Cancel Order
             </Button>
           )}
-          {order.status === 'Đang giao' && (
+          {order.status === 'shipping' && (
             <Button
               type="primary"
               onClick={handleConfirmReceived}
@@ -142,7 +143,7 @@ export const OrderDetailPage = () => {
       </div>
 
       {/* STEP PROGRESS ACCENT */}
-      {order.status === 'Đã hủy' ? (
+      {order.status === 'cancelled' ? (
         <div className="bg-rose-50 border border-rose-100 rounded-3xl p-6 flex items-center gap-4 text-rose-700">
           <CloseCircleOutlined className="text-3xl shrink-0" />
           <div>
