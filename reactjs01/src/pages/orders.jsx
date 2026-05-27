@@ -7,12 +7,24 @@ import { ShoppingOutlined, RightOutlined } from '@ant-design/icons';
 
 export const OrdersPage = () => {
   const [orders, setOrders] = useState([]);
+  const [activeStatus, setActiveStatus] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
+
+  const statusTabs = [
+    { key: 'all', label: 'Tất cả' },
+    { key: 'new', label: 'Chờ xác nhận' },
+    { key: 'confirmed', label: 'Đã xác nhận' },
+    { key: 'preparing', label: 'Đang chuẩn bị' },
+    { key: 'shipping', label: 'Đang giao' },
+    { key: 'delivered', label: 'Đã giao' },
+    { key: 'cancelled', label: 'Đã hủy' }
+  ];
 
   useEffect(() => {
     const fetchOrders = async () => {
+      setIsLoading(true);
       try {
-        const res = await getOrdersAPI();
+        const res = await getOrdersAPI(activeStatus);
         if (res && res.data) {
           setOrders(res.data);
         }
@@ -23,16 +35,35 @@ export const OrdersPage = () => {
       }
     };
     fetchOrders();
-  }, []);
+  }, [activeStatus]);
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-12 text-left space-y-8">
-      <div>
-        <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-          <ShoppingOutlined className="text-indigo-600" />
-          <span>My Orders</span>
-        </h2>
-        <p className="text-slate-400 text-[14px] mt-1 font-medium">Track your active deliveries and review order history.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+            <ShoppingOutlined className="text-indigo-600" />
+            <span>My Orders</span>
+          </h2>
+          <p className="text-slate-400 text-[14px] mt-1 font-medium">Track your active deliveries and review order history.</p>
+        </div>
+      </div>
+
+      {/* Horizontal Scrollable Status Pills Bar */}
+      <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-none border-b border-slate-100">
+        {statusTabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveStatus(tab.key)}
+            className={`px-5 py-2.5 rounded-full text-[13px] font-bold transition-all duration-200 cursor-pointer whitespace-nowrap border shrink-0 ${
+              activeStatus === tab.key
+                ? 'bg-indigo-600 text-white border-indigo-650 shadow-md shadow-indigo-500/10'
+                : 'bg-white text-gray-500 border-slate-100 hover:border-slate-200 hover:text-gray-700'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {isLoading ? (

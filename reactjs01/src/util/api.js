@@ -84,8 +84,8 @@ export const createOrderAPI = (orderData) => {
   return axios.post('/v1/api/orders', orderData);
 };
 
-export const getOrdersAPI = () => {
-  return axios.get('/v1/api/orders');
+export const getOrdersAPI = (status) => {
+  return axios.get('/v1/api/orders', { params: { status } });
 };
 
 export const getOrderDetailAPI = (orderId) => {
