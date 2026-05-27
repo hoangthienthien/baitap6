@@ -51,9 +51,50 @@ const getMostViewedProductsApi = (limit = 10) => {
     return axios.get(`/v1/api/most-viewed-products?limit=${limit}`);
 }
 
+// Cart APIs
+const getCartApi = () => {
+    return axios.get('/v1/api/cart');
+}
+
+const addToCartApi = (productId, quantity = 1) => {
+    return axios.post('/v1/api/cart/add', { productId, quantity });
+}
+
+const updateCartItemApi = (productId, quantity) => {
+    return axios.put('/v1/api/cart/update', { productId, quantity });
+}
+
+const removeCartItemApi = (productId) => {
+    return axios.delete(`/v1/api/cart/remove/${productId}`);
+}
+
+const clearCartApi = () => {
+    return axios.delete('/v1/api/cart/clear');
+}
+
+// Order APIs
+const createOrderApi = (orderData) => {
+    return axios.post('/v1/api/orders', orderData);
+}
+
+const getOrdersApi = (status = '') => {
+    const query = status ? `?status=${status}` : '';
+    return axios.get(`/v1/api/orders${query}`);
+}
+
+const getOrderDetailApi = (orderId) => {
+    return axios.get(`/v1/api/orders/${orderId}`);
+}
+
+const cancelOrderApi = (orderId, reason = '') => {
+    return axios.put(`/v1/api/orders/${orderId}/cancel`, { reason });
+}
+
 export {
     createUserApi, loginApi, getUserApi,
     getProductsApi, getProductBySlugApi, getSimilarProductsApi,
     getCategoriesApi, getPromotionProductsApi,
-    getNewProductsApi, getBestSellerProductsApi, getMostViewedProductsApi
+    getNewProductsApi, getBestSellerProductsApi, getMostViewedProductsApi,
+    getCartApi, addToCartApi, updateCartItemApi, removeCartItemApi, clearCartApi,
+    createOrderApi, getOrdersApi, getOrderDetailApi, cancelOrderApi
 };

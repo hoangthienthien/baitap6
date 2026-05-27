@@ -5,7 +5,7 @@ const auth = (req, res, next) => {
     // Exact match whitelist
     const white_lists = ["/", "/register", "/login", "/forgot-password", "/reset-password"];
     // Prefix match whitelist (public product/category APIs)
-    const public_prefixes = ["/products", "/categories", "/promotion-products", "/new-products", "/bestseller-products", "/similar-products"];
+    const public_prefixes = ["/products", "/categories", "/promotion-products", "/new-products", "/bestseller-products", "/similar-products", "/most-viewed-products"];
 
     const path = req.originalUrl.replace('/v1/api', '').split('?')[0]; // bỏ query string
 
@@ -17,6 +17,7 @@ const auth = (req, res, next) => {
             try {
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
                 req.user = {
+                    _id: decoded._id,
                     email: decoded.email,
                     name: decoded.name,
                     createdBy: "hoidanit"

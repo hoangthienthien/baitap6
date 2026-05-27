@@ -3,9 +3,11 @@ import Header from "./components/layout/header";
 import axios from "./util/axios.customize";
 import { useContext, useEffect } from "react";
 import { AuthContext } from "./components/context/auth.context";
+import { CartContext } from "./components/context/cart.context";
 
 function App() {
     const { setAuth, appLoading, setAppLoading } = useContext(AuthContext);
+    const { fetchCart } = useContext(CartContext);
 
     useEffect(() => {
         const fetchAccount = async () => {
@@ -16,6 +18,8 @@ function App() {
                     isAuthenticated: true,
                     user: { email: res.email, name: res.name }
                 });
+                // Fetch cart khi user đã đăng nhập
+                fetchCart();
             }
             setAppLoading(false);
         }

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useEffect, useState, useContext } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Thumbs, FreeMode } from 'swiper/modules';
 import 'swiper/css';
@@ -10,9 +10,15 @@ import 'swiper/css/free-mode';
 import { getProductBySlugApi, getSimilarProductsApi } from '../util/api';
 import { formatPrice, calcDiscount } from '../util/helpers';
 import ProductCard from '../components/product/ProductCard';
+import { CartContext } from '../components/context/cart.context';
+import { AuthContext } from '../components/context/auth.context';
+import { notification } from 'antd';
 
 const ProductDetailPage = () => {
     const { slug } = useParams();
+    const navigate = useNavigate();
+    const { auth } = useContext(AuthContext);
+    const { addToCart } = useContext(CartContext);
     const [product, setProduct] = useState(null);
     const [similar, setSimilar] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -215,12 +221,30 @@ const ProductDetailPage = () => {
                             <div className="flex gap-3 mt-auto pt-4">
                                 <button
                                     disabled={product.stock === 0}
+                                    onClick={async () => {
+                                        if (!auth.isAuthenticated) { navigate('/login'); return; }
+                                        const res = await addToCart(product._id, quantity);
+                                        if (res?.EC === 0) {
+                                            navigate('/checkout');
+                                        } else {
+                                            notification.error({ message: res?.EM || 'Lỗi thêm giỏ hàng' });
+                                        }
+                                    }}
                                     className="flex-1 py-3.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Mua ngay
                                 </button>
                                 <button
                                     disabled={product.stock === 0}
+                                    onClick={async () => {
+                                        if (!auth.isAuthenticated) { navigate('/login'); return; }
+                                        const res = await addToCart(product._id, quantity);
+                                        if (res?.EC === 0) {
+                                            notification.success({ message: `Đã thêm "${product.name}" vào giỏ hàng` });
+                                        } else {
+                                            notification.error({ message: res?.EM || 'Lỗi thêm giỏ hàng' });
+                                        }
+                                    }}
                                     className="px-6 py-3.5 border-2 border-indigo-200 text-indigo-600 font-semibold rounded-xl hover:bg-indigo-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     🛒 Thêm giỏ

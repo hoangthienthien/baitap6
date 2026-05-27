@@ -4,12 +4,14 @@ import { LockOutlined, MailOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { loginApi } from '../util/api';
 import { AuthContext } from '../components/context/auth.context';
+import { CartContext } from '../components/context/cart.context';
 
 const { Title, Text } = Typography;
 
 const LoginPage = () => {
     const navigate = useNavigate();
     const { setAuth } = useContext(AuthContext);
+    const { fetchCart } = useContext(CartContext);
     const [loading, setLoading] = useState(false);
 
     const onFinish = async (values) => {
@@ -25,6 +27,8 @@ const LoginPage = () => {
                     name: res?.user?.name ?? ""
                 }
             });
+            // Fetch giỏ hàng sau khi đăng nhập
+            fetchCart();
             notification.success({
                 message: "Đăng nhập thành công",
                 description: "Chào mừng bạn quay trở lại!"
