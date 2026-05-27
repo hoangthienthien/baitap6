@@ -1,139 +1,153 @@
 import React, { useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { formatPrice, calcDiscount } from '../../util/helpers';
+import { Link } from 'react-router-dom';
+import { StarFilled, ShoppingCartOutlined } from '@ant-design/icons';
 import { CartContext } from '../context/cart.context';
-import { AuthContext } from '../context/auth.context';
-import { notification } from 'antd';
+import { formatPrice } from '../../util/helpers';
 
-const ProductCard = ({ product, variant = 'home' }) => {
-    const navigate = useNavigate();
-    const { auth } = useContext(AuthContext);
-    const { addToCart } = useContext(CartContext);
-    const discount = calcDiscount(product.originalPrice, product.price);
+export const ProductCard = ({ product, variant = 'deals' }) => {
+  const { addToCart } = useContext(CartContext);
 
-    const handleAddToCart = async (e) => {
-        e.preventDefault(); // Ngăn chặn chuyển hướng đến trang chi tiết khi nhấn nút Add to Cart
-        e.stopPropagation();
+  const discountPercent = product.originalPrice && product.price
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    : 0;
 
-        if (!auth.isAuthenticated) {
-            notification.info({ message: 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng' });
-            navigate('/login');
-            return;
-        }
+  const handleAddClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart(product, 1, product.storage?.[0] || '128GB', product.colors?.[0] || 'Standard');
+  };
 
-        const res = await addToCart(product._id, 1);
-        if (res?.EC === 0) {
-            notification.success({ message: `Đã thêm "${product.name}" vào giỏ hàng!` });
-        } else {
-            notification.error({ message: res?.EM || 'Lỗi thêm giỏ hàng' });
-        }
-    };
+  const getImageUrl = () => {
+    if (product.image) return product.image;
+    if (product.images && product.images.length > 0) return product.images[0];
+    return 'https://via.placeholder.com/300?text=Device';
+  };
 
+  // VARIANT B: SEARCH / DISCOVER GRID CARD
+  if (variant === 'search') {
     return (
-        <Link 
-            to={`/product/${product.slug}`} 
-            className="group flex flex-col h-full bg-white rounded-2xl shadow-sm hover:shadow-xl hover:border-blue-200/80 border border-slate-100 overflow-hidden transition-premium hover:-translate-y-1"
-        >
-            {/* Image Container */}
-            <div className="relative overflow-hidden bg-slate-50/50 aspect-square flex items-center justify-center p-4">
-                <img
-                    src={product.images?.[0] || 'https://via.placeholder.com/400'}
-                    alt={product.name}
-                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500"
+      <Link 
+        to={`/products/${product.slug}`}
+        className="group flex flex-col bg-white rounded-2xl border border-gray-100 overflow-hidden card-hover text-left p-4 relative"
+      >
+        {/* Discount Badge */}
+        {discountPercent > 0 && (
+          <span className="absolute top-4 left-4 z-10 bg-red-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+            -{discountPercent}%
+          </span>
+        )}
+
+        {/* Product Image Box */}
+        <div className="w-full aspect-square bg-[#f8fafc] rounded-xl flex items-center justify-center p-6 mb-4 overflow-hidden relative">
+          <img 
+            src={getImageUrl()} 
+            alt={product.name}
+            className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500 ease-out"
+          />
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 flex flex-col justify-between">
+          <div className="space-y-1.5">
+            <span className="text-[12px] font-bold text-gray-400 uppercase tracking-wider">
+              {product.brand || 'Nexus Pro'}
+            </span>
+            <h3 className="font-bold text-[16px] text-gray-900 line-clamp-1 leading-snug group-hover:text-indigo-600 transition-colors">
+              {product.name}
+            </h3>
+            
+            {/* Stars */}
+            <div className="flex items-center gap-1">
+              {[...Array(5)].map((_, i) => (
+                <StarFilled 
+                  key={i} 
+                  className={`text-[12px] ${i < Math.round(product.rating || 5) ? 'text-amber-400' : 'text-gray-200'}`} 
                 />
-                
-                {/* Badges */}
-                <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
-                    {discount > 0 && (
-                        <span className="bg-[#ef4444] text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider shadow-sm">
-                            {discount}% OFF
-                        </span>
-                    )}
-                    {product.isNew && (
-                        <span className="bg-[#10b981] text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider shadow-sm">
-                            New
-                        </span>
-                    )}
-                    {product.isBestSeller && (
-                        <span className="bg-[#f59e0b] text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider shadow-sm">
-                            Bán chạy
-                        </span>
-                    )}
-                </div>
+              ))}
+              <span className="text-[12px] font-semibold text-gray-400 ml-1">
+                ({product.reviewsCount || 42})
+              </span>
+            </div>
+          </div>
 
-                {/* Stock Tag */}
-                {product.stock === 0 ? (
-                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center z-10">
-                        <span className="bg-white/95 text-slate-800 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">Hết hàng</span>
-                    </div>
-                ) : product.stock < 10 && (
-                    <span className="absolute bottom-3 right-3 bg-red-50 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-md border border-red-100 z-10">
-                        Chỉ còn {product.stock}
-                    </span>
-                )}
+          <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between gap-3">
+            <div className="flex flex-col">
+              <span className="text-[18px] font-extrabold text-indigo-600 leading-tight">
+                {formatPrice(product.price)}
+              </span>
+              {product.originalPrice > product.price && (
+                <span className="text-[13px] text-gray-400 line-through">
+                  {formatPrice(product.originalPrice)}
+                </span>
+              )}
             </div>
 
-            {/* Info Container */}
-            <div className="p-4 flex flex-col flex-1">
-                {/* Brand / Category */}
-                {product.category && (
-                    <p className="text-[10px] text-slate-400 font-bold mb-1 uppercase tracking-wider">
-                        {product.category.name}
-                    </p>
-                )}
-                
-                {/* Product Name */}
-                <h3 className="font-semibold text-slate-800 text-xs sm:text-sm leading-snug mb-1.5 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                    {product.name}
-                </h3>
-                
-                {/* Rating */}
-                <div className="flex items-center gap-1 mb-3">
-                    <div className="flex">
-                        {[1, 2, 3, 4, 5].map(star => (
-                            <svg key={star} className={`w-3 h-3 ${star <= Math.round(product.rating) ? 'text-amber-400' : 'text-slate-200'}`} fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                        ))}
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-medium">({product.reviewCount || 0})</span>
-                    <span className="text-[10px] text-slate-400 font-medium ml-auto">Đã bán {product.sold || 0}</span>
-                </div>
-                
-                {/* Price & Action Button */}
-                <div className="mt-auto space-y-3">
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-sm sm:text-base font-bold text-blue-600">{formatPrice(product.price)}</span>
-                        {discount > 0 && (
-                            <span className="text-[10px] text-slate-400 line-through font-medium">{formatPrice(product.originalPrice)}</span>
-                        )}
-                    </div>
-
-                    {/* Add to Cart button */}
-                    {variant === 'search' ? (
-                        <button
-                            disabled={product.stock === 0}
-                            onClick={handleAddToCart}
-                            className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-[#10b981] hover:bg-[#059669] text-white text-[11px] font-bold rounded-lg transition-premium shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                        >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
-                            </svg>
-                            Add to Cart
-                        </button>
-                    ) : (
-                        <button
-                            disabled={product.stock === 0}
-                            onClick={handleAddToCart}
-                            className="w-full py-2 px-3 bg-blue-50/50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200/50 hover:border-transparent text-[11px] font-bold rounded-lg transition-premium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                        >
-                            Add to Cart
-                        </button>
-                    )}
-                </div>
-            </div>
-        </Link>
+            <button
+              onClick={handleAddClick}
+              className="bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-semibold text-[13px] px-3.5 py-2.5 rounded-xl flex items-center gap-1.5 transition-all duration-200 cursor-pointer shadow-sm shadow-emerald-500/10"
+            >
+              <ShoppingCartOutlined className="text-base" />
+              <span>Add</span>
+            </button>
+          </div>
+        </div>
+      </Link>
     );
-};
+  }
 
-export default ProductCard;
+  // VARIANT A: HOME PAGE / HOT DEALS / SUGGESTIONS
+  return (
+    <Link 
+      to={`/products/${product.slug}`}
+      className="group flex flex-col bg-white rounded-3xl border border-slate-100/60 overflow-hidden card-hover text-left p-5 relative"
+    >
+      {/* Promotion Tag */}
+      {discountPercent > 0 && (
+        <span className="absolute top-5 left-5 z-10 bg-rose-500 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+          {discountPercent}% OFF
+        </span>
+      )}
+
+      {/* Image container */}
+      <div className="w-full aspect-square bg-[#f1f5f9]/50 rounded-2xl flex items-center justify-center p-6 mb-5 overflow-hidden">
+        <img 
+          src={getImageUrl()} 
+          alt={product.name}
+          className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500 ease-out"
+        />
+      </div>
+
+      {/* Name and pricing */}
+      <div className="flex-1 flex flex-col justify-between">
+        <div className="space-y-1">
+          <h3 className="font-bold text-[16px] text-[#0f172a] line-clamp-1 group-hover:text-indigo-600 transition-colors">
+            {product.name}
+          </h3>
+          <p className="text-[13px] text-slate-400 line-clamp-1">
+            {product.description || 'Premium engineering & high performance.'}
+          </p>
+        </div>
+
+        <div className="mt-4 space-y-4">
+          <div className="flex items-baseline gap-2">
+            <span className="text-[19px] font-extrabold text-indigo-900">
+              {formatPrice(product.price)}
+            </span>
+            {product.originalPrice > product.price && (
+              <span className="text-[14px] text-slate-400 line-through font-medium">
+                {formatPrice(product.originalPrice)}
+              </span>
+            )}
+          </div>
+
+          <button
+            onClick={handleAddClick}
+            className="w-full bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200/80 text-indigo-600 font-bold text-[13px] py-3 rounded-xl text-center transition-all duration-200 cursor-pointer border border-indigo-100/50"
+          >
+            Add to Cart
+          </button>
+        </div>
+      </div>
+    </Link>
+  );
+};

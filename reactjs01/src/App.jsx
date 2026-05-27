@@ -1,47 +1,58 @@
-import { Outlet } from "react-router-dom";
-import Header from "./components/layout/header";
-import axios from "./util/axios.customize";
-import { useContext, useEffect } from "react";
-import { AuthContext } from "./components/context/auth.context";
-import { CartContext } from "./components/context/cart.context";
+import React from 'react';
+import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
+import { AuthProvider } from './components/context/auth.context';
+import { CartProvider } from './components/context/cart.context';
+import { Header } from './components/layout/header';
+import { Footer } from './components/layout/footer';
+import { Home } from './pages/home';
+import { SearchPage } from './pages/search';
+import { CartPage } from './pages/cart';
+import { ProductDetailPage } from './pages/productDetail';
+import { CheckoutPage } from './pages/checkout';
+import { OrdersPage } from './pages/orders';
+import { OrderDetailPage } from './pages/orderDetail';
+import { LoginPage } from './pages/login';
+import { RegisterPage } from './pages/register';
+import { ForgotPasswordPage } from './pages/forgotPassword';
+import { UserProfilePage } from './pages/user';
+import './App.css';
+
+const Layout = () => {
+  return (
+    <div className="flex flex-col min-h-screen bg-slate-50/30">
+      <Header />
+      <main className="flex-grow">
+        <Outlet />
+      </main>
+      <Footer />
+    </div>
+  );
+};
 
 function App() {
-    const { setAuth, appLoading, setAppLoading } = useContext(AuthContext);
-    const { fetchCart } = useContext(CartContext);
-
-    useEffect(() => {
-        const fetchAccount = async () => {
-            setAppLoading(true);
-            const res = await axios.get(`/v1/api/account`);
-            if (res && !res.message) {
-                setAuth({
-                    isAuthenticated: true,
-                    user: { email: res.email, name: res.name }
-                });
-                // Fetch cart khi user đã đăng nhập
-                fetchCart();
-            }
-            setAppLoading(false);
-        }
-        fetchAccount();
-    }, []);
-
-    return (
-        <div className="min-h-screen bg-slate-50/50">
-            {appLoading === true ?
-                <div className="fixed inset-0 flex items-center justify-center bg-white z-50">
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="w-10 h-10 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
-                        <p className="text-slate-400 text-xs font-semibold">Đang tải TechNexus...</p>
-                    </div>
-                </div>
-                :
-                <>
-                    <Header />
-                    <Outlet />
-                </>
-            }
-        </div>
-    )
+  return (
+    <AuthProvider>
+      <CartProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Home />} />
+              <Route path="search" element={<SearchPage />} />
+              <Route path="cart" element={<CartPage />} />
+              <Route path="products/:slug" element={<ProductDetailPage />} />
+              <Route path="checkout" element={<CheckoutPage />} />
+              <Route path="orders" element={<OrdersPage />} />
+              <Route path="orders/:orderId" element={<OrderDetailPage />} />
+              <Route path="user" element={<UserProfilePage />} />
+              <Route path="login" element={<LoginPage />} />
+              <Route path="register" element={<RegisterPage />} />
+              <Route path="forgot-password" element={<ForgotPasswordPage />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </CartProvider>
+    </AuthProvider>
+  );
 }
+
 export default App;

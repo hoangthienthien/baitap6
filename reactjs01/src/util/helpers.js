@@ -1,8 +1,14 @@
 export const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-};
+  if (price === undefined || price === null) return '$0.00';
+  
+  // Try to parse the price to number if it's string
+  const numPrice = typeof price === 'string' ? parseFloat(price) : price;
+  if (isNaN(numPrice)) return '$0.00';
 
-export const calcDiscount = (original, current) => {
-    if (!original || original <= current) return 0;
-    return Math.round(((original - current) / original) * 100);
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  }).format(numPrice);
 };

@@ -1,408 +1,374 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination, Thumbs, FreeMode } from 'swiper/modules';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
-import 'swiper/css/thumbs';
-import 'swiper/css/free-mode';
-import { getProductBySlugApi, getSimilarProductsApi } from '../util/api';
-import { formatPrice, calcDiscount } from '../util/helpers';
-import ProductCard from '../components/product/ProductCard';
+import { getProductBySlugAPI, addToCartAPI } from '../util/api';
 import { CartContext } from '../components/context/cart.context';
-import { AuthContext } from '../components/context/auth.context';
-import { notification } from 'antd';
+import { formatPrice } from '../util/helpers';
+import { StarFilled, HeartOutlined, HeartFilled } from '@ant-design/icons';
+import { Spin, Table, Button, message } from 'antd';
 
-const ProductDetailPage = () => {
-    const { slug } = useParams();
-    const navigate = useNavigate();
-    const { auth } = useContext(AuthContext);
-    const { addToCart } = useContext(CartContext);
-    const [product, setProduct] = useState(null);
-    const [similar, setSimilar] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [thumbsSwiper, setThumbsSwiper] = useState(null);
+export const ProductDetailPage = () => {
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const { addToCart } = useContext(CartContext);
 
-    // Interactive variant selections
-    const [selectedColor, setSelectedColor] = useState('blue');
-    const [selectedStorage, setSelectedStorage] = useState('128GB');
-    const [quantity, setQuantity] = useState(1);
+  // States
+  const [product, setProduct] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeImage, setActiveImage] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
+  const [selectedStorage, setSelectedStorage] = useState('');
+  const [isLiked, setIsLiked] = useState(false);
 
-    useEffect(() => {
-        const fetchProduct = async () => {
-            setLoading(true);
-            setQuantity(1);
-            const res = await getProductBySlugApi(slug);
-            if (res?.EC === 0) {
-                setProduct(res.data);
-                // Lấy sản phẩm tương tự
-                const simRes = await getSimilarProductsApi(res.data._id, res.data.category?._id, 4);
-                if (simRes?.EC === 0) setSimilar(simRes.data);
-            }
-            setLoading(false);
-        };
-        fetchProduct();
-        window.scrollTo(0, 0);
-    }, [slug]);
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-[60vh] bg-slate-50/50">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
-                    <p className="text-slate-400 text-xs font-semibold">Đang tải chi tiết thiết bị...</p>
-                </div>
-            </div>
-        );
-    }
-
-    if (!product) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 bg-slate-50/20">
-                <p className="text-slate-500 font-bold text-sm">Thiết bị không tồn tại</p>
-                <Link to="/" className="px-5 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700">Về trang chủ</Link>
-            </div>
-        );
-    }
-
-    const discount = calcDiscount(product.originalPrice, product.price);
-
-    const handleBuyNow = async () => {
-        if (!auth.isAuthenticated) { navigate('/login'); return; }
-        const res = await addToCart(product._id, quantity);
-        if (res?.EC === 0) {
-            navigate('/checkout');
-        } else {
-            notification.error({ message: res?.EM || 'Lỗi thêm giỏ hàng' });
+  useEffect(() => {
+    const fetchProductDetails = async () => {
+      setIsLoading(true);
+      try {
+        const res = await getProductBySlugAPI(slug);
+        if (res && res.product) {
+          setProduct(res.product);
+          // Set initial defaults
+          const p = res.product;
+          setActiveImage(p.image || (p.images && p.images[0]) || '');
+          setSelectedColor(p.colors?.[0] || 'Standard');
+          setSelectedStorage(p.storage?.[0] || '128GB');
         }
+      } catch (err) {
+        console.error('Failed to load product detail:', err);
+      } finally {
+        setIsLoading(false);
+      }
     };
+    fetchProductDetails();
+  }, [slug]);
 
-    const handleAddToCart = async () => {
-        if (!auth.isAuthenticated) { navigate('/login'); return; }
-        const res = await addToCart(product._id, quantity);
-        if (res?.EC === 0) {
-            notification.success({ message: `Đã thêm "${product.name}" vào giỏ hàng` });
-        } else {
-            notification.error({ message: res?.EM || 'Lỗi thêm giỏ hàng' });
-        }
-    };
-
-    // Spec mapping table variables
-    const specsMap = {
-        display: product.specs?.screen || '6.7" Super Retina XDR OLED, 120Hz',
-        processor: product.specs?.chip || 'Apple A17 Pro (3nm) 6-core',
-        camera: product.specs?.camera || product.specs?.rear || '48MP Main + 12MP Telephoto + 12MP Ultra Wide',
-        battery: product.specs?.battery || '4422mAh, Fast Charging 25W',
-        water: 'IP68 Dust/Water resistant (up to 6m for 30 mins)',
-    };
-
+  if (isLoading) {
     return (
-        <div className="min-h-screen bg-[#f8fafc] py-6">
-            <div className="max-w-6xl mx-auto px-4 md:px-6 space-y-12">
-                
-                {/* Breadcrumb Navigation */}
-                <nav className="flex items-center gap-2 text-[11px] text-slate-400 font-bold uppercase tracking-wider">
-                    <Link to="/" className="hover:text-blue-600 transition-colors">Trang chủ</Link>
-                    <span>&gt;</span>
-                    {product.category && (
-                        <>
-                            <Link to={`/search?category=${product.category.slug}`} className="hover:text-blue-600 transition-colors">{product.category.name}</Link>
-                            <span>&gt;</span>
-                        </>
-                    )}
-                    <span className="text-slate-600 truncate max-w-xs">{product.name}</span>
-                </nav>
-
-                {/* Main Product Container */}
-                <div className="bg-white rounded-2xl border border-slate-100 p-6 md:p-8 shadow-sm">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-                        
-                        {/* Left Side: Images & Gallery */}
-                        <div className="lg:col-span-6 space-y-4">
-                            {/* Primary Image View */}
-                            <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-8 flex items-center justify-center aspect-square relative">
-                                <Swiper
-                                    modules={[Navigation, Pagination, Thumbs]}
-                                    navigation
-                                    pagination={{ clickable: true }}
-                                    thumbs={{ swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }}
-                                    className="w-full h-full object-contain"
-                                >
-                                    {product.images.map((img, idx) => (
-                                        <SwiperSlide key={idx} className="flex items-center justify-center">
-                                            <img src={img} alt={`${product.name} ${idx + 1}`} className="max-h-full max-w-full object-contain mx-auto" />
-                                        </SwiperSlide>
-                                    ))}
-                                </Swiper>
-                            </div>
-
-                            {/* Image Thumbnails Row */}
-                            {product.images.length > 1 && (
-                                <div className="px-2">
-                                    <Swiper
-                                        onSwiper={setThumbsSwiper}
-                                        modules={[FreeMode, Thumbs]}
-                                        freeMode
-                                        watchSlidesProgress
-                                        slidesPerView={4}
-                                        spaceBetween={12}
-                                    >
-                                        {product.images.map((img, idx) => (
-                                            <SwiperSlide key={idx} className="cursor-pointer">
-                                                <div className="rounded-xl overflow-hidden border-2 border-slate-100 hover:border-blue-500/80 transition-premium aspect-square bg-slate-50 flex items-center justify-center p-1.5">
-                                                    <img src={img} alt={`Thumb ${idx + 1}`} className="max-h-full max-w-full object-contain mx-auto" />
-                                                </div>
-                                            </SwiperSlide>
-                                        ))}
-                                    </Swiper>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Right Side: Sell/Config Options */}
-                        <div className="lg:col-span-6 space-y-6">
-                            
-                            {/* Release Badge & Details */}
-                            <div className="space-y-3">
-                                <span className="inline-flex px-2.5 py-0.5 rounded text-[9px] font-bold bg-[#10b981]/15 text-[#10b981] uppercase tracking-wider">
-                                    New Release
-                                </span>
-                                <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
-                                    {product.name}
-                                </h1>
-                                
-                                {/* Star rating row */}
-                                <div className="flex items-center gap-2 text-xs text-slate-400 font-bold">
-                                    <div className="flex">
-                                        {[1, 2, 3, 4, 5].map(star => (
-                                            <svg key={star} className={`w-3.5 h-3.5 ${star <= Math.round(product.rating) ? 'text-amber-400' : 'text-slate-200'}`} fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                            </svg>
-                                        ))}
-                                    </div>
-                                    <span>({product.reviewCount || 128} Reviews)</span>
-                                </div>
-                            </div>
-
-                            {/* Pricing & Offer details */}
-                            <div className="space-y-1">
-                                <div className="flex items-baseline gap-3">
-                                    <span className="text-3xl font-extrabold text-blue-600">{formatPrice(product.price)}</span>
-                                    {discount > 0 && (
-                                        <span className="text-sm font-semibold text-slate-400 line-through">{formatPrice(product.originalPrice)}</span>
-                                    )}
-                                </div>
-                                {discount > 0 && (
-                                    <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wide">
-                                        Save {formatPrice(product.originalPrice - product.price)} today with launch offer
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Interactive Color Selector */}
-                            <div className="space-y-2">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Color</span>
-                                <div className="flex items-center gap-3">
-                                    {[
-                                        { id: 'blue', class: 'bg-[#1e3a8a]', name: 'Blue' },
-                                        { id: 'white', class: 'bg-[#e2e8f0]', name: 'White' },
-                                        { id: 'purple', class: 'bg-[#581c87]', name: 'Purple' },
-                                        { id: 'green', class: 'bg-[#064e3b]', name: 'Green' }
-                                    ].map((color) => (
-                                        <button
-                                            key={color.id}
-                                            onClick={() => setSelectedColor(color.id)}
-                                            title={color.name}
-                                            className={`w-6 h-6 rounded-full cursor-pointer transition-premium relative flex items-center justify-center ${color.class} ${
-                                                selectedColor === color.id 
-                                                    ? 'ring-2 ring-blue-500 ring-offset-2 scale-105' 
-                                                    : 'hover:scale-105'
-                                            }`}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Interactive Storage Selector */}
-                            <div className="space-y-2">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Storage</span>
-                                <div className="grid grid-cols-3 gap-3">
-                                    {[
-                                        { id: '128GB', label: '128GB', desc: 'Standard' },
-                                        { id: '256GB', label: '256GB', desc: '+1.000.000đ' },
-                                        { id: '512GB', label: '512GB', desc: '+2.000.000đ' }
-                                    ].map((storage) => (
-                                        <button
-                                            key={storage.id}
-                                            onClick={() => setSelectedStorage(storage.id)}
-                                            className={`p-3 rounded-xl border flex flex-col items-center justify-center text-center cursor-pointer transition-premium ${
-                                                selectedStorage === storage.id
-                                                    ? 'border-blue-600 bg-blue-50/20 shadow-sm'
-                                                    : 'border-slate-200/80 hover:border-slate-300'
-                                            }`}
-                                        >
-                                            <span className="text-xs font-bold text-slate-800">{storage.label}</span>
-                                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wide mt-0.5">{storage.desc}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Stock & Quantity Selection */}
-                            <div className="flex items-center justify-between py-2 border-y border-slate-100">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quantity:</span>
-                                    <div className="flex items-center bg-slate-50 border border-slate-200/80 rounded-lg overflow-hidden ml-2">
-                                        <button
-                                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                            className="w-8 h-8 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors text-sm font-bold cursor-pointer"
-                                        >−</button>
-                                        <span className="w-10 h-8 flex items-center justify-center text-xs font-bold text-slate-700">
-                                            {quantity}
-                                        </span>
-                                        <button
-                                            onClick={() => setQuantity(Math.min(product.stock || 99, quantity + 1))}
-                                            className="w-8 h-8 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors text-sm font-bold cursor-pointer"
-                                        >+</button>
-                                    </div>
-                                </div>
-
-                                <div className="text-right">
-                                    {product.stock > 0 ? (
-                                        <span className="text-[10px] font-bold text-[#10b981] bg-[#10b981]/10 px-2.5 py-1 rounded-md uppercase tracking-wider">
-                                            Còn hàng ({product.stock} sp)
-                                        </span>
-                                    ) : (
-                                        <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2.5 py-1 rounded-md uppercase tracking-wider">Hết hàng</span>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Buy Now & Add to Cart Action Buttons */}
-                            <div className="flex gap-4 pt-2">
-                                <button
-                                    disabled={product.stock === 0}
-                                    onClick={handleBuyNow}
-                                    className="flex-1 py-3.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                >
-                                    Buy Now
-                                </button>
-                                <button
-                                    disabled={product.stock === 0}
-                                    onClick={handleAddToCart}
-                                    className="flex-1 py-3.5 bg-[#10b981] hover:bg-[#059669] text-white text-xs font-bold rounded-lg shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                >
-                                    Add to Cart
-                                </button>
-                            </div>
-
-                            {/* Trust commitment badges */}
-                            <div className="grid grid-cols-2 gap-4 pt-4">
-                                <div className="rounded-xl p-4 bg-slate-50 border border-slate-100 flex flex-col gap-1 items-center text-center">
-                                    <span className="text-lg">🚚</span>
-                                    <span className="text-[10px] font-bold text-slate-800 uppercase tracking-wide">Free Express Delivery</span>
-                                    <span className="text-[9px] text-slate-400 font-medium leading-relaxed">Order in 4h 21m for tomorrow delivery</span>
-                                </div>
-                                <div className="rounded-xl p-4 bg-slate-50 border border-slate-100 flex flex-col gap-1 items-center text-center">
-                                    <span className="text-lg">🛡️</span>
-                                    <span className="text-[10px] font-bold text-slate-800 uppercase tracking-wide">2-Year Warranty</span>
-                                    <span className="text-[9px] text-slate-400 font-medium leading-relaxed">Comprehensive coverage including accidents</span>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-
-                {/* Technical Specifications Section */}
-                <div className="bg-white rounded-2xl border border-slate-100 p-6 md:p-8 space-y-6 shadow-sm">
-                    <h2 className="text-xl font-extrabold text-slate-900 tracking-tight pb-3 border-b border-slate-100">
-                        Technical Specifications
-                    </h2>
-
-                    <div className="border border-slate-100 rounded-xl overflow-hidden">
-                        <table className="w-full text-xs font-medium text-slate-500">
-                            <tbody>
-                                {[
-                                    { label: 'Display', value: specsMap.display },
-                                    { label: 'Processor', value: specsMap.processor },
-                                    { label: 'Rear Camera', value: specsMap.camera },
-                                    { label: 'Battery', value: specsMap.battery },
-                                    { label: 'Water Resistance', value: specsMap.water }
-                                ].map((spec, idx) => (
-                                    <tr key={idx} className={idx % 2 === 0 ? 'bg-slate-50/50' : 'bg-white'}>
-                                        <td className="w-1/3 py-4 px-6 font-bold text-slate-700 capitalize border-b border-slate-100">{spec.label}</td>
-                                        <td className="py-4 px-6 text-slate-600 border-b border-slate-100">{spec.value}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {/* Customer Reviews Section */}
-                <div className="bg-white rounded-2xl border border-slate-100 p-6 md:p-8 space-y-8 shadow-sm">
-                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                        <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Customer Reviews</h2>
-                        <button className="px-4 py-2 border border-blue-600 text-blue-600 hover:bg-blue-50 text-[10px] font-bold rounded-lg transition-premium cursor-pointer">
-                            Write a Review
-                        </button>
-                    </div>
-
-                    {/* Review Cards Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {[
-                            { name: 'Julian Smith', time: '2 days ago', rating: 5, comment: 'The camera quality is absolutely insane. Coming from the previous generation, the low-light performance on this Ultra model is a massive step up.' },
-                            { name: 'Maria Lopez', time: '1 week ago', rating: 5, comment: 'Incredible battery life. I\'m getting a full two days with moderate usage. The 100W charging is a game changer for quick top-ups.' },
-                            { name: 'David Kim', time: '2 weeks ago', rating: 5, comment: 'The display is the best I\'ve ever seen on a phone. The brightness is blinding even in direct sunlight. Well worth the price tag.' }
-                        ].map((review, idx) => (
-                            <div key={idx} className="rounded-xl border border-slate-100 p-5 space-y-3.5 bg-slate-50/30 flex flex-col justify-between">
-                                <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs">
-                                                {review.name.split(' ').map(n=>n[0]).join('')}
-                                            </div>
-                                            <div>
-                                                <h4 className="text-[11px] font-extrabold text-slate-800">{review.name}</h4>
-                                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wide">Verified Purchaser</p>
-                                            </div>
-                                        </div>
-                                        <span className="text-[9px] text-slate-400 font-medium">{review.time}</span>
-                                    </div>
-                                    
-                                    <div className="flex">
-                                        {Array.from({ length: 5 }, (_, i) => (
-                                            <svg key={i} className={`w-3.5 h-3.5 ${i < review.rating ? 'text-amber-400' : 'text-slate-200'}`} fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                            </svg>
-                                        ))}
-                                    </div>
-                                    
-                                    <p className="text-slate-500 text-[11px] leading-relaxed font-medium">"{review.comment}"</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Similar Products (You may also like) */}
-                {similar.length > 0 && (
-                    <section className="space-y-6 pt-6 border-t border-slate-100">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Sản phẩm tương tự</h2>
-                            <Link to="/search" className="text-xs font-bold text-blue-600 hover:text-blue-700">View All</Link>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                            {similar.map(p => <ProductCard key={p._id} product={p} variant="home" />)}
-                        </div>
-                    </section>
-                )}
-                
-            </div>
-        </div>
+      <div className="py-40 flex items-center justify-center">
+        <Spin size="large" tip="Loading product details..." />
+      </div>
     );
-};
+  }
 
-export default ProductDetailPage;
+  if (!product) {
+    return (
+      <div className="py-24 max-w-lg mx-auto text-center space-y-4">
+        <h2 className="text-2xl font-bold text-slate-800">Không tìm thấy sản phẩm!</h2>
+        <Link to="/search" className="inline-block bg-indigo-600 text-white font-bold px-6 py-3 rounded-xl">
+          Quay lại trang sản phẩm
+        </Link>
+      </div>
+    );
+  }
+
+  // Calculate pricing based on selected storage
+  let calculatedPrice = product.price;
+  if (selectedStorage === '256GB') {
+    calculatedPrice += 100;
+  } else if (selectedStorage === '512GB') {
+    calculatedPrice += 250;
+  }
+
+  const originalPrice = product.originalPrice ? product.originalPrice + (calculatedPrice - product.price) : 0;
+  const saveAmount = originalPrice - calculatedPrice;
+
+  // Visual images list
+  const imagesList = product.images && product.images.length > 0
+    ? product.images
+    : [product.image || 'https://via.placeholder.com/600?text=Device'];
+
+  const colorMap = {
+    'Black': '#1e293b',
+    'Gray': '#64748b',
+    'Titanium Gray': '#475569',
+    'Silver': '#cbd5e1',
+    'White': '#f8fafc',
+    'Purple': '#581c87',
+    'Royal Purple': '#3b0764',
+    'Emerald': '#047857',
+    'Green': '#15803d',
+    'Standard': '#2563eb'
+  };
+
+  const colors = product.colors && product.colors.length > 0 ? product.colors : ['Titanium Gray', 'Silver', 'Purple', 'Green'];
+  const storages = product.storage && product.storage.length > 0 ? product.storage : ['128GB', '256GB', '512GB'];
+
+  const specData = [
+    { key: '1', name: 'Display', value: product.specs?.display || '6.8" Dynamic AMOLED 2X, 120Hz, HDR10+, 2500 nits' },
+    { key: '2', name: 'Processor', value: product.specs?.processor || 'Snapdragon 8 Gen 4 (4nm) Octa-core' },
+    { key: '3', name: 'Rear Camera', value: product.specs?.camera || '200MP Main + 50MP Periscope + 12MP Ultrawide' },
+    { key: '4', name: 'Battery', value: product.specs?.battery || '5500 mAh, 100W Wired Charging, 50W Wireless' },
+    { key: '5', name: 'Water Resistance', value: product.specs?.waterResistance || 'IP68 dust/water resistant (up to 1.5m for 30 min)' }
+  ];
+
+  const mockReviews = [
+    { name: 'Julian Smith', days: '2 days ago', rating: 5, comment: 'The camera quality is absolutely insane. Coming from the previous generation, the low-light performance on this Ultra model is a massive step up.' },
+    { name: 'Maria Lopez', days: '1 week ago', rating: 5, comment: 'Incredible battery life. I\'m getting a full two days with moderate usage. The 100W charging is a game changer for quick top-ups.' },
+    { name: 'David Kim', days: '2 weeks ago', rating: 4, comment: 'The display is the best I\'ve ever seen on a phone. The brightness is blinding even in direct sunlight. Well worth the price tag.' }
+  ];
+
+  const handleAddToCart = () => {
+    addToCart(product, 1, selectedStorage, selectedColor);
+  };
+
+  const handleBuyNow = () => {
+    addToCart(product, 1, selectedStorage, selectedColor);
+    navigate('/cart');
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-6 py-12 text-left space-y-16">
+      {/* Breadcrumbs */}
+      <nav className="text-[14px] text-slate-400 font-semibold flex items-center gap-2">
+        <Link to="/" className="hover:text-indigo-600 transition-colors">Home</Link>
+        <span>&gt;</span>
+        <Link to="/search?category=Smartphones" className="hover:text-indigo-600 transition-colors">Smartphones</Link>
+        <span>&gt;</span>
+        <span className="text-slate-700">{product.name}</span>
+      </nav>
+
+      {/* Main Content Columns */}
+      <div className="flex flex-col lg:flex-row gap-12 items-start">
+        
+        {/* Left Column (Main Image & Thumbnails) */}
+        <div className="w-full lg:w-[500px] shrink-0 space-y-5">
+          {/* Main Large Image Block */}
+          <div className="w-full aspect-[5/4] bg-white border border-slate-100 rounded-3xl flex items-center justify-center p-8 overflow-hidden">
+            <img 
+              src={activeImage} 
+              alt={product.name}
+              className="max-h-full max-w-full object-contain hover:scale-105 transition-transform duration-500 ease-out"
+            />
+          </div>
+
+          {/* Thumbnails Row */}
+          <div className="flex gap-3.5 overflow-x-auto pb-2">
+            {imagesList.map((img, i) => (
+              <button
+                key={i}
+                onClick={() => setActiveImage(img)}
+                className={`w-20 h-20 bg-white border rounded-2xl p-2 shrink-0 flex items-center justify-center transition-all cursor-pointer ${
+                  activeImage === img 
+                    ? 'border-indigo-500 ring-2 ring-indigo-500/10' 
+                    : 'border-slate-200 hover:border-gray-300'
+                }`}
+              >
+                <img src={img} alt="Thumbnail" className="max-h-full max-w-full object-contain" />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Column (Product Sales info) */}
+        <div className="flex-1 w-full space-y-6">
+          <div className="space-y-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-bold tracking-wider uppercase bg-emerald-100 text-emerald-700 rounded-full">
+              New Release
+            </span>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-indigo-950 tracking-tight leading-snug">
+              {product.name}
+            </h1>
+            
+            {/* Reviews rating info */}
+            <div className="flex items-center gap-1">
+              {[...Array(5)].map((_, i) => (
+                <StarFilled key={i} className="text-amber-400 text-base" />
+              ))}
+              <span className="text-[13px] font-semibold text-slate-400 ml-1">(128 Reviews)</span>
+            </div>
+          </div>
+
+          {/* Pricing Box */}
+          <div className="border-y border-slate-100 py-5 space-y-2">
+            <div className="flex items-baseline gap-3">
+              <span className="text-3xl font-extrabold text-indigo-900 tracking-tight">
+                {formatPrice(calculatedPrice)}
+              </span>
+              {originalPrice > calculatedPrice && (
+                <span className="text-[18px] text-slate-400 line-through font-semibold">
+                  {formatPrice(originalPrice)}
+                </span>
+              )}
+            </div>
+            {saveAmount > 0 && (
+              <span className="inline-block text-[12px] font-extrabold bg-rose-50 text-rose-600 px-3 py-1 rounded-lg">
+                Save {formatPrice(saveAmount)} today with launch offer
+              </span>
+            )}
+          </div>
+
+          {/* Color Selection */}
+          <div className="space-y-3">
+            <span className="text-[13px] font-bold text-gray-400 uppercase tracking-wider">Color</span>
+            <div className="flex gap-3">
+              {colors.map((color) => {
+                const hexColor = colorMap[color] || '#cbd5e1';
+                return (
+                  <button
+                    key={color}
+                    onClick={() => setSelectedColor(color)}
+                    title={color}
+                    className={`w-9 h-9 rounded-full border-2 flex items-center justify-center cursor-pointer transition-all ${
+                      selectedColor === color 
+                        ? 'border-indigo-600 scale-110 shadow-md ring-2 ring-indigo-500/10' 
+                        : 'border-transparent hover:scale-105'
+                    }`}
+                    style={{ backgroundColor: hexColor }}
+                  />
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Storage Options */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-bold text-gray-400 uppercase tracking-wider">Storage</span>
+              <span className="text-[12px] text-indigo-600 font-bold hover:underline cursor-pointer">Size Guide</span>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {storages.map((storage) => {
+                let addText = 'Standard';
+                if (storage === '256GB') addText = '+$100';
+                if (storage === '512GB') addText = '+$250';
+                
+                return (
+                  <button
+                    key={storage}
+                    onClick={() => setSelectedStorage(storage)}
+                    className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 ${
+                      selectedStorage === storage
+                        ? 'border-indigo-600 bg-indigo-50/30 text-indigo-950 font-bold'
+                        : 'border-slate-200 hover:border-gray-300 text-slate-500'
+                    }`}
+                  >
+                    <span className="text-sm tracking-tight">{storage}</span>
+                    <span className="text-[11px] opacity-75 font-semibold mt-1">{addText}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Buy/Add Action Box */}
+          <div className="flex gap-4 pt-4">
+            <button
+              onClick={handleBuyNow}
+              className="flex-1 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-extrabold text-[14px] py-4 rounded-2xl text-center shadow-lg shadow-indigo-600/10 transition-all duration-200 cursor-pointer"
+            >
+              Buy Now
+            </button>
+            <button
+              onClick={handleAddToCart}
+              className="flex-1 bg-emerald-500 hover:bg-emerald-600 active:scale-98 text-white font-extrabold text-[14px] py-4 rounded-2xl text-center shadow-lg shadow-emerald-500/10 transition-all duration-200 cursor-pointer"
+            >
+              Add to Cart
+            </button>
+
+            {/* Favorite button */}
+            <button
+              onClick={() => setIsLiked(!isLiked)}
+              className="w-14 h-14 shrink-0 rounded-2xl bg-slate-50 border border-slate-200 hover:border-indigo-400 hover:bg-white flex items-center justify-center transition-all duration-200 cursor-pointer"
+            >
+              {isLiked ? (
+                <HeartFilled className="text-rose-500 text-xl" />
+              ) : (
+                <HeartOutlined className="text-slate-400 hover:text-rose-500 text-xl" />
+              )}
+            </button>
+          </div>
+
+          {/* Delivery & Warranty info */}
+          <div className="bg-indigo-50/30 border border-indigo-100/50 rounded-2xl p-5 space-y-3.5 text-[13px] text-slate-600">
+            <div className="flex items-start gap-3">
+              <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 shrink-0 mt-1.5" />
+              <div>
+                <p className="font-extrabold text-indigo-950">Free Express Delivery</p>
+                <p className="text-slate-500 text-[12px] mt-0.5">Order in 4h 21m for tomorrow delivery.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0 mt-1.5" />
+              <div>
+                <p className="font-extrabold text-indigo-950">2-Year Warranty</p>
+                <p className="text-slate-500 text-[12px] mt-0.5">Comprehensive coverage including accidents.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* TECHNICAL SPECIFICATIONS */}
+      <section className="space-y-6 pt-10">
+        <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight pb-3 border-b border-gray-100 relative after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-32 after:h-0.5 after:bg-indigo-600">
+          Technical Specifications
+        </h2>
+        <div className="bg-white border border-slate-100 rounded-3xl overflow-hidden">
+          <table className="w-full text-[14px]">
+            <tbody>
+              {specData.map((spec, i) => (
+                <tr key={spec.key} className={i % 2 === 0 ? 'bg-slate-50/40' : 'bg-white'}>
+                  <td className="w-1/3 py-5 px-6 font-extrabold text-indigo-950 border-r border-slate-100/50">
+                    {spec.name}
+                  </td>
+                  <td className="py-5 px-6 font-semibold text-slate-500 leading-relaxed">
+                    {spec.value}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* CUSTOMER REVIEWS */}
+      <section className="space-y-8 pt-8">
+        <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+          <div>
+            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Customer Reviews</h2>
+            <p className="text-slate-400 text-sm mt-1 font-medium">What our early adopters are saying.</p>
+          </div>
+          <button 
+            onClick={() => message.info('Tính năng đang được phát triển!')}
+            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold text-[13px] px-5 py-2.5 rounded-xl cursor-pointer transition-all duration-200"
+          >
+            Write a Review
+          </button>
+        </div>
+
+        {/* Reviews Cards List */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {mockReviews.map((review, i) => (
+            <div key={i} className="bg-white border border-slate-100 rounded-3xl p-6 space-y-4 hover:shadow-md hover:shadow-slate-100/50 transition-all duration-300 text-left">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 text-sm">
+                    {review.name.split(' ').map(n => n.charAt(0)).join('')}
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-[14px] text-indigo-950">{review.name}</h4>
+                    <span className="text-[11px] font-bold text-gray-400 tracking-wide uppercase">Verified Purchaser</span>
+                  </div>
+                </div>
+                <span className="text-[12px] font-bold text-slate-400">{review.days}</span>
+              </div>
+
+              {/* Review Stars */}
+              <div className="flex items-center gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <StarFilled 
+                    key={i} 
+                    className={`text-[12px] ${i < review.rating ? 'text-amber-400' : 'text-gray-200'}`} 
+                  />
+                ))}
+              </div>
+
+              <p className="text-slate-500 text-[13px] leading-relaxed font-semibold">
+                "{review.comment}"
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+};

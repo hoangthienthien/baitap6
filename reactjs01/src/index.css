@@ -1,125 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+:root {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  scroll-behavior: smooth;
+  background-color: #f8fafc;
+  color: #0f172a;
 }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: #f8fafc;
-    color: #1e293b;
-    overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
 }
 
-/* Premium Scrollbar */
+/* Custom Scrollbar for a premium look */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+  width: 8px;
+  height: 8px;
 }
+
 ::-webkit-scrollbar-track {
-    background: #f1f5f9;
+  background: #f1f5f9;
 }
+
 ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 9999px;
+  background: #cbd5e1;
+  border-radius: 9999px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+  background: #94a3b8;
 }
 
-/* Ant Design overrides for compatibility */
-.ant-notification {
-    z-index: 10000 !important;
+/* Premium Animations and Effects */
+.premium-glow {
+  position: relative;
 }
 
-/* Glassmorphism Effect */
-.glass-effect {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+.premium-glow::before {
+  content: '';
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  right: -10%;
+  bottom: -10%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
+  z-index: -1;
+  pointer-events: none;
 }
 
-/* Card Zoom Effect */
-.hover-card-zoom {
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.hover-card-zoom:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.08);
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Circular Aura Glow Behind Devices */
-.glow-aura-blue {
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0) 70%);
+.card-hover:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.05), 0 8px 10px -6px rgb(0 0 0 / 0.05);
 }
 
-.glow-aura-green {
-    background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0) 70%);
+/* Antd design overrides for premium minimal look */
+.ant-btn {
+  border-radius: 12px !important;
+  font-weight: 500 !important;
+  font-family: inherit !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* Custom transitions */
-.transition-premium {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.ant-btn-primary {
+  background: #0f52ba !important;
+  border-color: #0f52ba !important;
 }
 
-/* Lazy loading fade-in animation */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(16px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.ant-btn-primary:hover {
+  background: #0d47a1 !important;
+  border-color: #0d47a1 !important;
+  transform: translateY(-1px);
 }
 
-.animate-fadeIn {
-    animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    opacity: 0;
+.ant-input {
+  border-radius: 10px !important;
+  padding: 8px 16px !important;
+  font-family: inherit !important;
 }
 
-/* Horizontal Product Swiper Styles */
-.product-horizontal-swiper .swiper-button-next,
-.product-horizontal-swiper .swiper-button-prev {
-    width: 44px;
-    height: 44px;
-    background: white;
-    border-radius: 50%;
-    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
-    transition: all 0.3s ease;
-    border: 1px solid #f1f5f9;
-}
-
-.product-horizontal-swiper .swiper-button-next:hover,
-.product-horizontal-swiper .swiper-button-prev:hover {
-    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
-    transform: scale(1.05);
-}
-
-.product-horizontal-swiper .swiper-button-next::after,
-.product-horizontal-swiper .swiper-button-prev::after {
-    font-size: 14px;
-    font-weight: bold;
-    color: #2563eb;
-}
-
-.product-horizontal-swiper .swiper-button-disabled {
-    opacity: 0.3 !important;
-}
-
-.product-horizontal-swiper .swiper-pagination-bullet {
-    width: 6px;
-    height: 6px;
-    background: #cbd5e1;
-    opacity: 1;
-    transition: all 0.3s ease;
-}
-
-.product-horizontal-swiper .swiper-pagination-bullet-active {
-    width: 20px;
-    border-radius: 999px;
-    background: #2563eb;
+.ant-modal-content {
+  border-radius: 20px !important;
+  padding: 32px !important;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15) !important;
 }

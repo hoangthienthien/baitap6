@@ -1,100 +1,105 @@
 import axios from './axios.customize';
 
-const createUserApi = (name, email, password) => {
-    const URL_API = "/v1/api/register";
-    const data = { name, email, password };
-    return axios.post(URL_API, data);
-}
+// Authentication APIs
+export const registerUserAPI = (name, email, password) => {
+  return axios.post('/v1/api/register', { name, email, password });
+};
 
-const loginApi = (email, password) => {
-    const URL_API = "/v1/api/login";
-    const data = { email, password };
-    return axios.post(URL_API, data);
-}
+export const loginUserAPI = (email, password) => {
+  return axios.post('/v1/api/login', { email, password });
+};
 
-const getUserApi = () => {
-    const URL_API = "/v1/api/user";
-    return axios.get(URL_API);
-}
+export const forgotPasswordAPI = (email) => {
+  return axios.post('/v1/api/forgot-password', { email });
+};
+
+export const resetPasswordAPI = (email, otp, newPassword) => {
+  return axios.post('/v1/api/reset-password', { email, otp, newPassword });
+};
+
+export const getUserAPI = () => {
+  return axios.get('/v1/api/user');
+};
+
+export const getAccountAPI = () => {
+  return axios.get('/v1/api/account');
+};
 
 // Product APIs
-const getProductsApi = (params = {}) => {
-    const query = new URLSearchParams(params).toString();
-    return axios.get(`/v1/api/products?${query}`);
-}
+export const getProductsAPI = (params) => {
+  return axios.get('/v1/api/products', { params });
+};
 
-const getProductBySlugApi = (slug) => {
-    return axios.get(`/v1/api/products/${slug}`);
-}
+export const getProductBySlugAPI = (slug) => {
+  return axios.get(`/v1/api/products/${slug}`);
+};
 
-const getSimilarProductsApi = (productId, categoryId, limit = 4) => {
-    return axios.get(`/v1/api/similar-products?productId=${productId}&categoryId=${categoryId}&limit=${limit}`);
-}
+export const getSimilarProductsAPI = (params) => {
+  return axios.get('/v1/api/similar-products', { params });
+};
 
-const getCategoriesApi = () => {
-    return axios.get('/v1/api/categories');
-}
+export const getCategoriesAPI = () => {
+  return axios.get('/v1/api/categories');
+};
 
-const getPromotionProductsApi = (limit = 8) => {
-    return axios.get(`/v1/api/promotion-products?limit=${limit}`);
-}
+export const getPromotionProductsAPI = () => {
+  return axios.get('/v1/api/promotion-products');
+};
 
-const getNewProductsApi = (limit = 8) => {
-    return axios.get(`/v1/api/new-products?limit=${limit}`);
-}
+export const getNewProductsAPI = () => {
+  return axios.get('/v1/api/new-products');
+};
 
-const getBestSellerProductsApi = (limit = 8) => {
-    return axios.get(`/v1/api/bestseller-products?limit=${limit}`);
-}
+export const getBestSellerProductsAPI = () => {
+  return axios.get('/v1/api/bestseller-products');
+};
 
-const getMostViewedProductsApi = (limit = 10) => {
-    return axios.get(`/v1/api/most-viewed-products?limit=${limit}`);
-}
+export const getMostViewedProductsAPI = () => {
+  return axios.get('/v1/api/most-viewed-products');
+};
 
 // Cart APIs
-const getCartApi = () => {
-    return axios.get('/v1/api/cart');
-}
+export const getCartAPI = () => {
+  return axios.get('/v1/api/cart');
+};
 
-const addToCartApi = (productId, quantity = 1) => {
-    return axios.post('/v1/api/cart/add', { productId, quantity });
-}
+export const addToCartAPI = (productId, quantity, name, price, image, storage, color) => {
+  return axios.post('/v1/api/cart/add', { productId, quantity, name, price, image, storage, color });
+};
 
-const updateCartItemApi = (productId, quantity) => {
-    return axios.put('/v1/api/cart/update', { productId, quantity });
-}
+export const updateCartItemAPI = (productId, quantity) => {
+  return axios.put('/v1/api/cart/update', { productId, quantity });
+};
 
-const removeCartItemApi = (productId) => {
-    return axios.delete(`/v1/api/cart/remove/${productId}`);
-}
+export const removeCartItemAPI = (productId) => {
+  return axios.delete(`/v1/api/cart/remove/${productId}`);
+};
 
-const clearCartApi = () => {
-    return axios.delete('/v1/api/cart/clear');
-}
+export const clearCartAPI = () => {
+  return axios.delete('/v1/api/cart/clear');
+};
 
 // Order APIs
-const createOrderApi = (orderData) => {
-    return axios.post('/v1/api/orders', orderData);
-}
+export const createOrderAPI = (orderData) => {
+  return axios.post('/v1/api/orders', orderData);
+};
 
-const getOrdersApi = (status = '') => {
-    const query = status ? `?status=${status}` : '';
-    return axios.get(`/v1/api/orders${query}`);
-}
+export const getOrdersAPI = () => {
+  return axios.get('/v1/api/orders');
+};
 
-const getOrderDetailApi = (orderId) => {
-    return axios.get(`/v1/api/orders/${orderId}`);
-}
+export const getOrderDetailAPI = (orderId) => {
+  return axios.get(`/v1/api/orders/${orderId}`);
+};
 
-const cancelOrderApi = (orderId, reason = '') => {
-    return axios.put(`/v1/api/orders/${orderId}/cancel`, { reason });
-}
+export const cancelOrderAPI = (orderId) => {
+  return axios.put(`/v1/api/orders/${orderId}/cancel`);
+};
 
-export {
-    createUserApi, loginApi, getUserApi,
-    getProductsApi, getProductBySlugApi, getSimilarProductsApi,
-    getCategoriesApi, getPromotionProductsApi,
-    getNewProductsApi, getBestSellerProductsApi, getMostViewedProductsApi,
-    getCartApi, addToCartApi, updateCartItemApi, removeCartItemApi, clearCartApi,
-    createOrderApi, getOrdersApi, getOrderDetailApi, cancelOrderApi
+export const confirmOrderAPI = (orderId) => {
+  return axios.put(`/v1/api/orders/${orderId}/confirm`);
+};
+
+export const updateOrderStatusAPI = (orderId, status) => {
+  return axios.put(`/v1/api/orders/${orderId}/status`, { status });
 };

@@ -1,214 +1,169 @@
 import React, { useState } from 'react';
-import { Button, Form, Input, notification, Typography, Row, Col, Card, Steps, Result } from 'antd';
-import { MailOutlined, LockOutlined, SafetyOutlined } from '@ant-design/icons';
-import { Link } from 'react-router-dom';
-import axios from '../util/axios.customize';
+import { Link, useNavigate } from 'react-router-dom';
+import { forgotPasswordAPI, resetPasswordAPI } from '../util/api';
+import { Form, Input, Button, message } from 'antd';
+import { MailOutlined, KeyOutlined, LockOutlined, ArrowRightOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 
-const { Title, Text } = Typography;
+export const ForgotPasswordPage = () => {
+  const [step, setStep] = useState(1);
+  const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
-const ForgotPasswordPage = () => {
-    const [currentStep, setCurrentStep] = useState(0);
-    const [loading, setLoading] = useState(false);
-    const [email, setEmail] = useState('');
+  const handleRequestOtp = async (values) => {
+    setIsLoading(true);
+    try {
+      const res = await forgotPasswordAPI(values.email);
+      if (res) {
+        setEmail(values.email);
+        setStep(2);
+        message.success('Mã xác thực OTP đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư!');
+      }
+    } catch (err) {
+      message.error(err.message || 'Không tìm thấy tài khoản gắn liền với Email này!');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    const onSendEmail = async (values) => {
-        setLoading(true);
-        try {
-            const res = await axios.post('/v1/api/forgot-password', { email: values.email });
-            if (res && res.EC === 0) {
-                setEmail(values.email);
-                notification.success({
-                    message: "Thành công",
-                    description: "Mã xác nhận đã được gửi đến email của bạn (kiểm tra console server)."
-                });
-                setCurrentStep(1);
-            } else {
-                notification.error({
-                    message: "Thất bại",
-                    description: res?.EM ?? "Email không tồn tại trong hệ thống!"
-                });
-            }
-        } catch (error) {
-            notification.error({
-                message: "Lỗi",
-                description: "Có lỗi xảy ra, vui lòng thử lại!"
-            });
-        }
-        setLoading(false);
-    };
+  const handleResetPassword = async (values) => {
+    setIsLoading(true);
+    try {
+      const res = await resetPasswordAPI(email, values.otp, values.newPassword);
+      if (res) {
+        message.success('Đổi mật khẩu thành công! Bạn có thể đăng nhập bằng mật khẩu mới.');
+        navigate('/login');
+      }
+    } catch (err) {
+      message.error(err.message || 'Mã OTP không chính xác hoặc đã hết hạn!');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    const onResetPassword = async (values) => {
-        setLoading(true);
-        try {
-            const res = await axios.post('/v1/api/reset-password', {
-                email: email,
-                code: values.code,
-                newPassword: values.newPassword
-            });
-            if (res && res.EC === 0) {
-                notification.success({
-                    message: "Đặt lại mật khẩu thành công",
-                    description: "Bạn có thể đăng nhập với mật khẩu mới!"
-                });
-                setCurrentStep(2);
-            } else {
-                notification.error({
-                    message: "Thất bại",
-                    description: res?.EM ?? "Mã xác nhận không đúng hoặc đã hết hạn!"
-                });
-            }
-        } catch (error) {
-            notification.error({
-                message: "Lỗi",
-                description: "Có lỗi xảy ra, vui lòng thử lại!"
-            });
-        }
-        setLoading(false);
-    };
+  return (
+    <div className="min-h-[80vh] flex items-center justify-center px-6 relative overflow-hidden bg-slate-50/20 py-12">
+      {/* Decorative Background Blur */}
+      <div className="absolute top-[20%] right-[30%] w-[300px] h-[300px] bg-indigo-50/20 rounded-full blur-[80px] pointer-events-none" />
 
-    return (
-        <Row justify="center" align="middle" className="min-h-screen bg-[#f8fafc]">
-            <Col xs={22} sm={16} md={12} lg={8} xl={6}>
-                <Card
-                    style={{
-                        borderRadius: 16,
-                        boxShadow: '0 10px 30px -10px rgba(15, 23, 42, 0.08)',
-                        border: '1px solid #f1f5f9'
-                    }}
+      <div className="w-full max-w-[420px] bg-white border border-slate-100 rounded-3xl p-8 relative z-10 shadow-xl shadow-slate-100/30 text-left space-y-6">
+        
+        {step === 1 ? (
+          <>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Reset Password</h2>
+              <p className="text-slate-400 text-sm font-semibold">Enter your email and we'll send you an OTP code.</p>
+            </div>
+
+            <Form
+              layout="vertical"
+              onFinish={handleRequestOtp}
+              requiredMark={false}
+              className="space-y-4"
+            >
+              <Form.Item
+                label={<span className="text-[12px] font-bold text-gray-500 uppercase tracking-wide">Email Address</span>}
+                name="email"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập Email!' },
+                  { type: 'email', message: 'Email không hợp lệ!' }
+                ]}
+              >
+                <Input 
+                  prefix={<MailOutlined className="text-slate-400 mr-2" />} 
+                  placeholder="name@example.com" 
+                  className="bg-slate-50 border-slate-200"
+                />
+              </Form.Item>
+
+              <Form.Item className="pt-2 mb-0">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-extrabold py-3.5 rounded-2xl flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-indigo-600/10 transition-all duration-200"
                 >
-                    <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                        <Title level={3} style={{ marginBottom: 4, fontWeight: 800, tracking: '-0.025em' }}>Quên mật khẩu</Title>
-                        <Text type="secondary" style={{ fontSize: 12, fontWeight: 600 }}>Khôi phục mật khẩu tài khoản của bạn</Text>
-                    </div>
+                  {isLoading ? 'Sending OTP...' : (
+                    <>
+                      <span>Send OTP Code</span>
+                      <ArrowRightOutlined />
+                    </>
+                  )}
+                </button>
+              </Form.Item>
+            </Form>
+          </>
+        ) : (
+          <>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Confirm OTP</h2>
+              <p className="text-slate-400 text-sm font-semibold">An OTP code has been sent to <span className="text-slate-700 font-bold">{email}</span>.</p>
+            </div>
 
-                    <Steps
-                        current={currentStep}
-                        size="small"
-                        style={{ marginBottom: 24 }}
-                        items={[
-                            { title: 'Nhập Email' },
-                            { title: 'Đặt lại' },
-                            { title: 'Hoàn tất' },
-                        ]}
-                    />
+            <Form
+              layout="vertical"
+              onFinish={handleResetPassword}
+              requiredMark={false}
+              className="space-y-4"
+            >
+              <Form.Item
+                label={<span className="text-[12px] font-bold text-gray-500 uppercase tracking-wide">OTP Code</span>}
+                name="otp"
+                rules={[{ required: true, message: 'Vui lòng nhập mã xác thực OTP!' }]}
+              >
+                <Input 
+                  prefix={<KeyOutlined className="text-slate-400 mr-2" />} 
+                  placeholder="Enter OTP (e.g. 123456)" 
+                  className="bg-slate-50 border-slate-200"
+                />
+              </Form.Item>
 
-                    {currentStep === 0 && (
-                        <Form
-                            name="forgot-password"
-                            onFinish={onSendEmail}
-                            layout="vertical"
-                            size="large"
-                        >
-                            <Form.Item
-                                name="email"
-                                label="Email đã đăng ký"
-                                rules={[
-                                    { required: true, message: 'Vui lòng nhập email!' },
-                                    { type: 'email', message: 'Email không hợp lệ!' }
-                                ]}
-                            >
-                                <Input
-                                    prefix={<MailOutlined className="text-slate-400" />}
-                                    placeholder="your@email.com"
-                                    style={{ borderRadius: 8, fontSize: 13 }}
-                                />
-                            </Form.Item>
+              <Form.Item
+                label={<span className="text-[12px] font-bold text-gray-500 uppercase tracking-wide">New Password</span>}
+                name="newPassword"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập mật khẩu mới!' },
+                  { min: 6, message: 'Mật khẩu phải chứa ít nhất 6 ký tự!' }
+                ]}
+              >
+                <Input.Password 
+                  prefix={<LockOutlined className="text-slate-400 mr-2" />} 
+                  placeholder="••••••••" 
+                  className="bg-slate-50 border-slate-200"
+                />
+              </Form.Item>
 
-                            <Form.Item>
-                                <Button type="primary" htmlType="submit" block loading={loading} style={{ borderRadius: 8, background: '#2563eb', border: 'none', height: 42, fontSize: 13, fontWeight: 700 }}>
-                                    Gửi mã xác nhận
-                                </Button>
-                            </Form.Item>
-                        </Form>
-                    )}
+              <Form.Item className="pt-2 mb-0">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-extrabold py-3.5 rounded-2xl flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-indigo-600/10 transition-all duration-200"
+                >
+                  {isLoading ? 'Resetting Password...' : (
+                    <>
+                      <span>Reset Password</span>
+                      <ArrowRightOutlined />
+                    </>
+                  )}
+                </button>
+              </Form.Item>
+            </Form>
 
-                    {currentStep === 1 && (
-                        <Form
-                            name="reset-password"
-                            onFinish={onResetPassword}
-                            layout="vertical"
-                            size="large"
-                        >
-                            <Form.Item
-                                name="code"
-                                label="Mã xác nhận"
-                                rules={[{ required: true, message: 'Vui lòng nhập mã xác nhận!' }]}
-                            >
-                                <Input
-                                    prefix={<SafetyOutlined className="text-slate-400" />}
-                                    placeholder="Nhập mã 6 số"
-                                    style={{ borderRadius: 8, fontSize: 13 }}
-                                />
-                            </Form.Item>
+            <button 
+              onClick={() => setStep(1)}
+              className="flex items-center justify-center gap-1.5 text-[13px] font-bold text-slate-400 hover:text-indigo-600 hover:underline mx-auto transition-colors cursor-pointer"
+            >
+              <ArrowLeftOutlined className="text-xs" />
+              <span>Back to Email request</span>
+            </button>
+          </>
+        )}
 
-                            <Form.Item
-                                name="newPassword"
-                                label="Mật khẩu mới"
-                                rules={[
-                                    { required: true, message: 'Vui lòng nhập mật khẩu mới!' },
-                                    { min: 6, message: 'Mật khẩu tối thiểu 6 ký tự!' }
-                                ]}
-                            >
-                                <Input.Password
-                                    prefix={<LockOutlined className="text-slate-400" />}
-                                    placeholder="Tối thiểu 6 ký tự"
-                                    style={{ borderRadius: 8, fontSize: 13 }}
-                                />
-                            </Form.Item>
-
-                            <Form.Item
-                                name="confirmPassword"
-                                label="Xác nhận mật khẩu mới"
-                                dependencies={['newPassword']}
-                                rules={[
-                                    { required: true, message: 'Vui lòng xác nhận mật khẩu!' },
-                                    ({ getFieldValue }) => ({
-                                        validator(_, value) {
-                                            if (!value || getFieldValue('newPassword') === value) {
-                                                return Promise.resolve();
-                                            }
-                                            return Promise.reject(new Error('Mật khẩu xác nhận không khớp!'));
-                                        },
-                                    }),
-                                ]}
-                            >
-                                <Input.Password
-                                    prefix={<LockOutlined className="text-slate-400" />}
-                                    placeholder="Nhập lại mật khẩu mới"
-                                    style={{ borderRadius: 8, fontSize: 13 }}
-                                />
-                            </Form.Item>
-
-                            <Form.Item>
-                                <Button type="primary" htmlType="submit" block loading={loading} style={{ borderRadius: 8, background: '#2563eb', border: 'none', height: 42, fontSize: 13, fontWeight: 700 }}>
-                                    Đặt lại mật khẩu
-                                </Button>
-                            </Form.Item>
-                        </Form>
-                    )}
-
-                    {currentStep === 2 && (
-                        <Result
-                            status="success"
-                            title="Đặt lại mật khẩu thành công!"
-                            subTitle="Bạn có thể đăng nhập với mật khẩu mới ngay bây giờ."
-                            extra={[
-                                <Link to="/login" key="login">
-                                    <Button type="primary" size="large" style={{ borderRadius: 8, background: '#2563eb', border: 'none', height: 40, fontSize: 13, fontWeight: 700 }}>
-                                        Đăng nhập ngay
-                                    </Button>
-                                </Link>
-                            ]}
-                        />
-                    )}
-
-                    <div style={{ textAlign: 'center', marginTop: 16, fontSize: 12 }}>
-                        <Link to="/login" style={{ fontWeight: 700, color: '#2563eb' }}>&larr; Quay lại đăng nhập</Link>
-                    </div>
-                </Card>
-            </Col>
-        </Row>
-    );
+        <div className="text-center pt-2">
+          <Link to="/login" className="text-sm font-bold text-indigo-600 hover:underline">
+            Back to Sign In
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 };
-
-export default ForgotPasswordPage;

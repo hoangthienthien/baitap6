@@ -1,357 +1,289 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { getProductsApi, getCategoriesApi } from '../util/api';
-import ProductCard from '../components/product/ProductCard';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { getProductsAPI } from '../util/api';
+import { ProductCard } from '../components/product/ProductCard';
+import { formatPrice } from '../util/helpers';
+import { Spin, Slider, Radio, Checkbox, Select, Pagination, Empty } from 'antd';
+import { FilterOutlined, DownOutlined } from '@ant-design/icons';
 
-const SearchPage = () => {
-    const navigate = useNavigate();
-    const [searchParams, setSearchParams] = useSearchParams();
-    const [products, setProducts] = useState([]);
-    const [categories, setCategories] = useState([]);
-    const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
-    const [loading, setLoading] = useState(true);
+export const SearchPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // States for data
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [totalProducts, setTotalProducts] = useState(0);
 
-    // Sidebar filter states
-    const [activeBrand, setActiveBrand] = useState(searchParams.get('category') || '');
-    const [priceRange, setPriceRange] = useState(Number(searchParams.get('maxPrice')) || 40000000);
-    const [selectedRam, setSelectedRam] = useState('');
-    const [selectedStorage, setSelectedStorage] = useState('');
-    const [selectedCamera, setSelectedCamera] = useState('');
-    const [sort, setSort] = useState(searchParams.get('sort') || 'popularity');
+  // States for query filters
+  const [activePage, setActivePage] = useState(1);
+  const [selectedBrands, setSelectedBrands] = useState([]);
+  const [priceRange, setPriceRange] = useState([0, 2000]);
+  const [selectedRam, setSelectedRam] = useState(null);
+  const [selectedStorage, setSelectedStorage] = useState(null);
+  const [selectedCamera, setSelectedCamera] = useState([]);
+  const [sortBy, setSortBy] = useState('popularity');
 
-    // Fetch categories/brands on load
-    useEffect(() => {
-        getCategoriesApi().then(res => {
-            if (res?.EC === 0) setCategories(res.data);
-        });
-    }, []);
+  // URL query params
+  const categoryParam = searchParams.get('category') || '';
+  const searchNameParam = searchParams.get('name') || '';
+  const promotionParam = searchParams.get('promotion') || '';
 
-    // Sync state from URL search params
-    useEffect(() => {
-        setActiveBrand(searchParams.get('category') || '');
-        setPriceRange(Number(searchParams.get('maxPrice')) || 40000000);
-        setSort(searchParams.get('sort') || 'popularity');
-        fetchProducts();
-    }, [searchParams]);
+  // Initial Sync from URL or reset on category change
+  useEffect(() => {
+    setActivePage(1);
+    setSelectedBrands([]);
+    setPriceRange([0, 2000]);
+    setSelectedRam(null);
+    setSelectedStorage(null);
+    setSelectedCamera([]);
+  }, [categoryParam, searchNameParam, promotionParam]);
 
-    const fetchProducts = async () => {
-        setLoading(true);
-        const params = {
-            page: searchParams.get('page') || 1,
-            limit: 8, // Set limit to 8 to match the 4x2 grid in the mockup
-            category: searchParams.get('category') || '',
-            minPrice: searchParams.get('minPrice') || '',
-            maxPrice: searchParams.get('maxPrice') || '',
-            sort: searchParams.get('sort') === 'popularity' ? 'best_seller' : (searchParams.get('sort') || 'newest'),
-            search: searchParams.get('search') || '',
-            isPromotion: searchParams.get('isPromotion') || '',
-            isBestSeller: searchParams.get('isBestSeller') || ''
+  // Load products when filters or page changes
+  useEffect(() => {
+    const fetchFilteredProducts = async () => {
+      setIsLoading(true);
+      try {
+        const query = {
+          page: activePage,
+          limit: 8,
+          category: categoryParam,
+          name: searchNameParam,
+          promotion: promotionParam,
+          sort: sortBy,
         };
 
-        const res = await getProductsApi(params);
-        if (res?.EC === 0) {
-            setProducts(res.data);
-            setPagination(res.pagination);
+        if (selectedBrands.length > 0) {
+          query.brand = selectedBrands.join(',');
         }
-        setLoading(false);
-    };
-
-    // Apply URL parameter updates
-    const updateUrlParams = (newParams) => {
-        const params = new URLSearchParams(searchParams);
-        Object.entries(newParams).forEach(([key, value]) => {
-            if (value === null || value === '') {
-                params.delete(key);
-            } else {
-                params.set(key, value);
-            }
-        });
-        params.delete('page'); // Reset to page 1 on filter change
-        setSearchParams(params);
-    };
-
-    // Client-side filtering of specs (RAM, Storage, Camera)
-    const getFilteredProducts = () => {
-        let list = [...products];
-
-        // Filter RAM client-side
+        if (priceRange[0] > 0) {
+          query.minPrice = priceRange[0];
+        }
+        if (priceRange[1] < 2000) {
+          query.maxPrice = priceRange[1];
+        }
         if (selectedRam) {
-            list = list.filter(p => p.specs?.ram?.toLowerCase() === selectedRam.toLowerCase());
+          query.ram = selectedRam;
         }
-
-        // Filter Storage client-side
         if (selectedStorage) {
-            list = list.filter(p => p.specs?.storage?.toLowerCase() === selectedStorage.toLowerCase());
+          query.storage = selectedStorage;
+        }
+        if (selectedCamera.length > 0) {
+          query.camera = selectedCamera.join(',');
         }
 
-        // Filter Camera client-side
-        if (selectedCamera) {
-            list = list.filter(p => {
-                const camSpec = p.specs?.camera || p.specs?.rear || '';
-                const pixels = parseInt(camSpec) || 0;
-                if (selectedCamera === '48MP+') return pixels >= 48 || camSpec.includes('48MP') || camSpec.includes('200MP');
-                if (selectedCamera === '64MP+') return pixels >= 64 || camSpec.includes('64MP') || camSpec.includes('200MP');
-                if (selectedCamera === '108MP+') return pixels >= 108 || camSpec.includes('108MP') || camSpec.includes('200MP');
-                return true;
-            });
+        const res = await getProductsAPI(query);
+        if (res) {
+          setProducts(res.products || res.data || []);
+          setTotalProducts(res.total || (res.products ? res.products.length : 0));
         }
-
-        return list;
+      } catch (err) {
+        console.error('Failed to load products:', err);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    const handleBrandToggle = (brandSlug) => {
-        const nextBrand = activeBrand === brandSlug ? '' : brandSlug;
-        setActiveBrand(nextBrand);
-        updateUrlParams({ category: nextBrand });
-    };
+    fetchFilteredProducts();
+  }, [activePage, selectedBrands, priceRange, selectedRam, selectedStorage, selectedCamera, sortBy, categoryParam, searchNameParam, promotionParam]);
 
-    const handlePriceRangeChange = (value) => {
-        setPriceRange(value);
-        updateUrlParams({ maxPrice: value });
-    };
+  const handleBrandChange = (checkedValues) => {
+    setSelectedBrands(checkedValues);
+    setActivePage(1);
+  };
 
-    const handleSortChange = (newSort) => {
-        setSort(newSort);
-        updateUrlParams({ sort: newSort });
-    };
+  const handleCameraChange = (checkedValues) => {
+    setSelectedCamera(checkedValues);
+    setActivePage(1);
+  };
 
-    const handlePageChange = (pageNum) => {
-        const params = new URLSearchParams(searchParams);
-        params.set('page', pageNum);
-        setSearchParams(params);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
+  const handlePriceChange = (val) => {
+    setPriceRange(val);
+    setActivePage(1);
+  };
 
-    const clearAllFilters = () => {
-        setActiveBrand('');
-        setPriceRange(40000000);
-        setSelectedRam('');
-        setSelectedStorage('');
-        setSelectedCamera('');
-        setSort('popularity');
-        setSearchParams({});
-    };
+  const toggleRam = (ram) => {
+    setSelectedRam(prev => prev === ram ? null : ram);
+    setActivePage(1);
+  };
 
-    const filteredList = getFilteredProducts();
+  const handleStorageChange = (e) => {
+    setSelectedStorage(e.target.value);
+    setActivePage(1);
+  };
 
-    return (
-        <div className="min-h-screen bg-[#f8fafc] py-8">
-            <div className="max-w-7xl mx-auto px-4 md:px-6">
-                
-                {/* Main 2-column layout */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    
-                    {/* LEFT COLUMN: Sidebar Filters */}
-                    <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-100 p-6 space-y-6 shadow-sm">
-                        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                            <span className="text-sm font-bold text-slate-800 uppercase tracking-wider">Filters</span>
-                            <button 
-                                onClick={clearAllFilters}
-                                className="text-[11px] font-bold text-blue-600 hover:text-blue-700 transition-colors"
-                            >
-                                Clear All
-                            </button>
-                        </div>
+  return (
+    <div className="max-w-7xl mx-auto px-6 py-12 text-left">
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+        
+        {/* LEFT COLUMN: SIDEBAR FILTER */}
+        <aside className="w-full lg:w-64 bg-white border border-gray-100 rounded-3xl p-6 shrink-0 space-y-8">
+          <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+            <h3 className="font-extrabold text-[16px] text-indigo-950 flex items-center gap-2">
+              <FilterOutlined />
+              <span>Filters</span>
+            </h3>
+            <button 
+              onClick={() => {
+                setSelectedBrands([]);
+                setPriceRange([0, 2000]);
+                setSelectedRam(null);
+                setSelectedStorage(null);
+                setSelectedCamera([]);
+              }}
+              className="text-[12px] font-bold text-indigo-600 hover:underline cursor-pointer"
+            >
+              Clear All
+            </button>
+          </div>
 
-                        {/* Brands Category Checkboxes */}
-                        <div className="space-y-3">
-                            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Brand</h4>
-                            <div className="space-y-2">
-                                {categories.map((cat) => (
-                                    <label key={cat._id} className="flex items-center gap-3.5 cursor-pointer text-xs text-slate-500 font-medium select-none hover:text-slate-800 transition-colors">
-                                        <input 
-                                            type="checkbox"
-                                            checked={activeBrand === cat.slug}
-                                            onChange={() => handleBrandToggle(cat.slug)}
-                                            className="w-4 h-4 border-slate-200 text-blue-600 focus:ring-blue-500/20 rounded cursor-pointer transition-colors"
-                                        />
-                                        <span>{cat.name}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
+          {/* 1. Brand selection */}
+          <div className="space-y-3">
+            <h4 className="font-extrabold text-[14px] text-gray-800 tracking-wide uppercase">Brand</h4>
+            <Checkbox.Group 
+              value={selectedBrands} 
+              onChange={handleBrandChange}
+              className="flex flex-col gap-2.5 w-full"
+            >
+              <Checkbox value="Nexus" className="text-sm font-semibold text-gray-600">Nexus Pro</Checkbox>
+              <Checkbox value="Zenith" className="text-sm font-semibold text-gray-600">Zenith Edge</Checkbox>
+              <Checkbox value="Aether" className="text-sm font-semibold text-gray-600">Aether Phonics</Checkbox>
+              <Checkbox value="Quantum" className="text-sm font-semibold text-gray-600">Quantum Mobile</Checkbox>
+            </Checkbox.Group>
+          </div>
 
-                        {/* Price Range Slider */}
-                        <div className="space-y-3">
-                            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Price Range</h4>
-                            <div className="space-y-2 relative">
-                                <input 
-                                    type="range"
-                                    min="0"
-                                    max="40000000"
-                                    step="1000000"
-                                    value={priceRange}
-                                    onChange={(e) => handlePriceRangeChange(Number(e.target.value))}
-                                    className="w-full h-1 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600 focus:outline-none"
-                                />
-                                <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold pt-1">
-                                    <span>0đ</span>
-                                    <span>{priceRange.toLocaleString('vi-VN')}đ</span>
-                                    <span>40Mđ</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* RAM Filter Buttons */}
-                        <div className="space-y-3">
-                            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">RAM</h4>
-                            <div className="grid grid-cols-3 gap-2">
-                                {['8GB', '12GB', '16GB'].map((ram) => (
-                                    <button
-                                        key={ram}
-                                        onClick={() => setSelectedRam(selectedRam === ram ? '' : ram)}
-                                        className={`py-2 text-[10px] font-bold rounded-lg border transition-premium cursor-pointer ${
-                                            selectedRam === ram 
-                                                ? 'border-blue-600 bg-blue-50/50 text-blue-600 shadow-sm' 
-                                                : 'border-slate-200/80 text-slate-500 hover:border-slate-300'
-                                        }`}
-                                    >
-                                        {ram}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Storage Radio Selection */}
-                        <div className="space-y-3">
-                            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Storage</h4>
-                            <div className="space-y-2">
-                                {['128GB', '256GB', '512GB'].map((storage) => (
-                                    <label key={storage} className="flex items-center gap-3.5 cursor-pointer text-xs text-slate-500 font-medium select-none hover:text-slate-800 transition-colors">
-                                        <input 
-                                            type="radio"
-                                            name="storage"
-                                            checked={selectedStorage === storage}
-                                            onChange={() => setSelectedStorage(selectedStorage === storage ? '' : storage)}
-                                            className="w-4 h-4 border-slate-200 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
-                                        />
-                                        <span>{storage}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Camera Checkbox */}
-                        <div className="space-y-3">
-                            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Camera</h4>
-                            <div className="space-y-2">
-                                {['48MP+', '64MP+', '108MP+'].map((cam) => (
-                                    <label key={cam} className="flex items-center gap-3.5 cursor-pointer text-xs text-slate-500 font-medium select-none hover:text-slate-800 transition-colors">
-                                        <input 
-                                            type="checkbox"
-                                            checked={selectedCamera === cam}
-                                            onChange={() => setSelectedCamera(selectedCamera === cam ? '' : cam)}
-                                            className="w-4 h-4 border-slate-200 text-blue-600 focus:ring-blue-500/20 rounded cursor-pointer"
-                                        />
-                                        <span>{cam}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* RIGHT COLUMN: Smartphones Grid & Sort */}
-                    <div className="lg:col-span-9 space-y-6">
-                        
-                        {/* Title and Sort Bar */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100/80">
-                            <div>
-                                <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Smartphones</h1>
-                                {searchParams.get('search') && (
-                                    <p className="text-xs text-slate-400 mt-1">Kết quả cho: "{searchParams.get('search')}"</p>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-3 self-end sm:self-auto">
-                                <label className="text-xs text-slate-400 font-bold uppercase tracking-wider">Sort by:</label>
-                                <select
-                                    value={sort}
-                                    onChange={(e) => handleSortChange(e.target.value)}
-                                    className="px-3.5 py-2 bg-white border border-slate-200/80 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-blue-500 cursor-pointer shadow-xs"
-                                >
-                                    <option value="popularity">Popularity</option>
-                                    <option value="price_asc">Price Low to High</option>
-                                    <option value="price_desc">Price High to Low</option>
-                                    <option value="rating">Rating</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        {/* Product Grid */}
-                        {loading ? (
-                            <div className="flex items-center justify-center py-24 bg-white rounded-2xl border border-slate-100">
-                                <div className="flex flex-col items-center gap-4">
-                                    <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
-                                    <p className="text-slate-400 text-xs font-semibold">Loading TechNexus devices...</p>
-                                </div>
-                            </div>
-                        ) : filteredList.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-24 bg-white rounded-2xl border border-slate-100 gap-4 text-center">
-                                <span className="text-4xl">🔍</span>
-                                <p className="text-slate-500 font-bold text-sm">Không tìm thấy sản phẩm nào phù hợp bộ lọc</p>
-                                <button 
-                                    onClick={clearAllFilters}
-                                    className="px-5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold rounded-lg transition-premium"
-                                >
-                                    Reset Filters
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                {filteredList.map((product, index) => (
-                                    <div
-                                        key={product._id}
-                                        className="animate-fadeIn"
-                                        style={{ animationDelay: `${(index % 8) * 40}ms` }}
-                                    >
-                                        <ProductCard product={product} variant="search" />
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Pagination Component */}
-                        {!loading && pagination.totalPages > 1 && (
-                            <div className="flex items-center justify-center gap-1.5 pt-10 border-t border-slate-100/80">
-                                <button
-                                    disabled={pagination.page === 1}
-                                    onClick={() => handlePageChange(pagination.page - 1)}
-                                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 cursor-pointer text-xs font-bold transition-premium"
-                                >
-                                    &lt;
-                                </button>
-
-                                {Array.from({ length: pagination.totalPages }, (_, index) => {
-                                    const pageNum = index + 1;
-                                    return (
-                                        <button
-                                            key={pageNum}
-                                            onClick={() => handlePageChange(pageNum)}
-                                            className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-premium cursor-pointer ${
-                                                pagination.page === pageNum
-                                                    ? 'bg-blue-600 text-white shadow-md shadow-blue-100 border border-blue-600'
-                                                    : 'border border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'
-                                            }`}
-                                        >
-                                            {pageNum}
-                                        </button>
-                                    );
-                                })}
-
-                                <button
-                                    disabled={pagination.page === pagination.totalPages}
-                                    onClick={() => handlePageChange(pagination.page + 1)}
-                                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 cursor-pointer text-xs font-bold transition-premium"
-                                >
-                                    &gt;
-                                </button>
-                            </div>
-                        )}
-                        
-                    </div>
-                </div>
+          {/* 2. Price Range slider */}
+          <div className="space-y-3">
+            <h4 className="font-extrabold text-[14px] text-gray-800 tracking-wide uppercase">Price Range</h4>
+            <Slider 
+              range 
+              min={0} 
+              max={2000} 
+              value={priceRange} 
+              onChange={handlePriceChange}
+              tooltip={{ formatter: (v) => formatPrice(v) }}
+              trackStyle={[{ backgroundColor: '#4f46e5' }]}
+              handleStyle={[{ borderColor: '#4f46e5', backgroundColor: '#fff' }]}
+            />
+            <div className="flex items-center justify-between text-[13px] text-gray-400 font-bold">
+              <span>{formatPrice(priceRange[0])}</span>
+              <span>{formatPrice(priceRange[1])}</span>
             </div>
-        </div>
-    );
-};
+          </div>
 
-export default SearchPage;
+          {/* 3. RAM Selection badges */}
+          <div className="space-y-3">
+            <h4 className="font-extrabold text-[14px] text-gray-800 tracking-wide uppercase">RAM</h4>
+            <div className="flex flex-wrap gap-2">
+              {['8GB', '12GB', '16GB'].map((ram) => (
+                <button
+                  key={ram}
+                  onClick={() => toggleRam(ram)}
+                  className={`px-4 py-2 text-[12px] font-bold rounded-xl cursor-pointer border transition-all duration-200 ${
+                    selectedRam === ram 
+                      ? 'bg-indigo-50 border-indigo-500 text-indigo-600 ring-2 ring-indigo-500/10'
+                      : 'bg-slate-50 border-slate-200 text-gray-500 hover:border-gray-300'
+                  }`}
+                >
+                  {ram}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 4. Storage selection radios */}
+          <div className="space-y-3">
+            <h4 className="font-extrabold text-[14px] text-gray-800 tracking-wide uppercase">Storage</h4>
+            <Radio.Group 
+              value={selectedStorage} 
+              onChange={handleStorageChange} 
+              className="flex flex-col gap-2.5 w-full"
+            >
+              <Radio value="128GB" className="text-sm font-semibold text-gray-600">128 GB</Radio>
+              <Radio value="256GB" className="text-sm font-semibold text-gray-600">256 GB</Radio>
+              <Radio value="512GB" className="text-sm font-semibold text-gray-600">512 GB</Radio>
+            </Radio.Group>
+          </div>
+
+          {/* 5. Camera Selection */}
+          <div className="space-y-3">
+            <h4 className="font-extrabold text-[14px] text-gray-800 tracking-wide uppercase">Camera</h4>
+            <Checkbox.Group 
+              value={selectedCamera} 
+              onChange={handleCameraChange}
+              className="flex flex-col gap-2.5 w-full"
+            >
+              <Checkbox value="48MP" className="text-sm font-semibold text-gray-600">48 MP</Checkbox>
+              <Checkbox value="64MP" className="text-sm font-semibold text-gray-600">64 MP</Checkbox>
+              <Checkbox value="108MP" className="text-sm font-semibold text-gray-600">108 MP</Checkbox>
+            </Checkbox.Group>
+          </div>
+        </aside>
+
+        {/* RIGHT COLUMN: GRID OF PRODUCTS */}
+        <main className="flex-1 w-full space-y-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight capitalize">
+                {categoryParam || searchNameParam || promotionParam ? (
+                  categoryParam ? categoryParam : (searchNameParam ? `Tìm kiếm: "${searchNameParam}"` : 'Clearance Offers')
+                ) : (
+                  'All Devices'
+                )}
+              </h2>
+              <p className="text-slate-400 text-sm mt-1 font-medium">{totalProducts} devices found</p>
+            </div>
+
+            {/* Sorting controller */}
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-slate-400 text-[13px] font-bold uppercase tracking-wider">Sort by:</span>
+              <Select
+                value={sortBy}
+                onChange={(val) => setSortBy(val)}
+                className="w-44 text-[13px] font-bold"
+                bordered={false}
+                suffixIcon={<DownOutlined className="text-gray-400 text-[11px]" />}
+                options={[
+                  { value: 'popularity', label: 'Popularity' },
+                  { value: 'priceAsc', label: 'Price: Low to High' },
+                  { value: 'priceDesc', label: 'Price: High to Low' },
+                  { value: 'newest', label: 'Newest Arrivals' }
+                ]}
+              />
+            </div>
+          </div>
+
+          {isLoading ? (
+            <div className="py-32 flex items-center justify-center">
+              <Spin size="large" tip="Discovering devices..." />
+            </div>
+          ) : products.length > 0 ? (
+            <div className="space-y-12">
+              {/* Product Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                {products.map((product) => (
+                  <ProductCard key={product._id} product={product} variant="search" />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              <div className="flex justify-center pt-4">
+                <Pagination
+                  current={activePage}
+                  pageSize={8}
+                  total={totalProducts}
+                  onChange={(page) => setActivePage(page)}
+                  showSizeChanger={false}
+                  className="premium-pagination"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="py-24 bg-white rounded-3xl border border-gray-100 flex items-center justify-center">
+              <Empty description="Không tìm thấy thiết bị nào khớp với bộ lọc của bạn." />
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+};
