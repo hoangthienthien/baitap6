@@ -107,7 +107,6 @@ const SearchPage = () => {
 
     const handlePriceRangeChange = (value) => {
         setPriceRange(value);
-        // Debounce or apply filter on mouseUp in React range is usually fine directly
         updateUrlParams({ maxPrice: value });
     };
 
@@ -224,7 +223,6 @@ const SearchPage = () => {
                                             name="storage"
                                             checked={selectedStorage === storage}
                                             onChange={() => setSelectedStorage(selectedStorage === storage ? '' : storage)}
-                                            onClick={() => setSelectedStorage(selectedStorage === storage ? '' : storage)}
                                             className="w-4 h-4 border-slate-200 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
                                         />
                                         <span>{storage}</span>
@@ -314,7 +312,6 @@ const SearchPage = () => {
                         {/* Pagination Component */}
                         {!loading && pagination.totalPages > 1 && (
                             <div className="flex items-center justify-center gap-1.5 pt-10 border-t border-slate-100/80">
-                                {/* Previous Page Button */}
                                 <button
                                     disabled={pagination.page === 1}
                                     onClick={() => handlePageChange(pagination.page - 1)}
@@ -323,7 +320,6 @@ const SearchPage = () => {
                                     &lt;
                                 </button>
 
-                                {/* Page Number Buttons */}
                                 {Array.from({ length: pagination.totalPages }, (_, index) => {
                                     const pageNum = index + 1;
                                     return (
@@ -341,7 +337,6 @@ const SearchPage = () => {
                                     );
                                 })}
 
-                                {/* Next Page Button */}
                                 <button
                                     disabled={pagination.page === pagination.totalPages}
                                     onClick={() => handlePageChange(pagination.page + 1)}

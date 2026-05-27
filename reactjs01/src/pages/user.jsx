@@ -24,8 +24,11 @@ const UserPage = () => {
     ];
 
     return (
-        <div style={{ padding: 30 }}>
-            <Table bordered dataSource={dataSource} columns={columns} rowKey={"_id"} />
+        <div className="max-w-6xl mx-auto px-4 py-8">
+            <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+                <h2 className="text-lg font-extrabold text-slate-900 tracking-tight mb-6">User Accounts</h2>
+                <Table bordered dataSource={dataSource} columns={columns} rowKey={"_id"} size="small" />
+            </div>
         </div>
     )
 }

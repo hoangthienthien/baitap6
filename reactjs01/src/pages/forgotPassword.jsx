@@ -11,7 +11,6 @@ const ForgotPasswordPage = () => {
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState('');
 
-    // Step 1: Gửi email để nhận mã xác nhận
     const onSendEmail = async (values) => {
         setLoading(true);
         try {
@@ -38,7 +37,6 @@ const ForgotPasswordPage = () => {
         setLoading(false);
     };
 
-    // Step 2: Xác nhận mã và đặt mật khẩu mới
     const onResetPassword = async (values) => {
         setLoading(true);
         try {
@@ -69,17 +67,18 @@ const ForgotPasswordPage = () => {
     };
 
     return (
-        <Row justify="center" align="middle" style={{ minHeight: '100vh', background: '#f0f2f5' }}>
+        <Row justify="center" align="middle" className="min-h-screen bg-[#f8fafc]">
             <Col xs={22} sm={16} md={12} lg={8} xl={6}>
                 <Card
                     style={{
-                        borderRadius: 12,
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+                        borderRadius: 16,
+                        boxShadow: '0 10px 30px -10px rgba(15, 23, 42, 0.08)',
+                        border: '1px solid #f1f5f9'
                     }}
                 >
                     <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                        <Title level={2} style={{ marginBottom: 4 }}>Quên mật khẩu</Title>
-                        <Text type="secondary">Khôi phục mật khẩu tài khoản của bạn</Text>
+                        <Title level={3} style={{ marginBottom: 4, fontWeight: 800, tracking: '-0.025em' }}>Quên mật khẩu</Title>
+                        <Text type="secondary" style={{ fontSize: 12, fontWeight: 600 }}>Khôi phục mật khẩu tài khoản của bạn</Text>
                     </div>
 
                     <Steps
@@ -93,7 +92,6 @@ const ForgotPasswordPage = () => {
                         ]}
                     />
 
-                    {/* Step 1: Nhập email */}
                     {currentStep === 0 && (
                         <Form
                             name="forgot-password"
@@ -110,20 +108,20 @@ const ForgotPasswordPage = () => {
                                 ]}
                             >
                                 <Input
-                                    prefix={<MailOutlined />}
+                                    prefix={<MailOutlined className="text-slate-400" />}
                                     placeholder="your@email.com"
+                                    style={{ borderRadius: 8, fontSize: 13 }}
                                 />
                             </Form.Item>
 
                             <Form.Item>
-                                <Button type="primary" htmlType="submit" block loading={loading}>
+                                <Button type="primary" htmlType="submit" block loading={loading} style={{ borderRadius: 8, background: '#2563eb', border: 'none', height: 42, fontSize: 13, fontWeight: 700 }}>
                                     Gửi mã xác nhận
                                 </Button>
                             </Form.Item>
                         </Form>
                     )}
 
-                    {/* Step 2: Nhập mã xác nhận + mật khẩu mới */}
                     {currentStep === 1 && (
                         <Form
                             name="reset-password"
@@ -137,8 +135,9 @@ const ForgotPasswordPage = () => {
                                 rules={[{ required: true, message: 'Vui lòng nhập mã xác nhận!' }]}
                             >
                                 <Input
-                                    prefix={<SafetyOutlined />}
+                                    prefix={<SafetyOutlined className="text-slate-400" />}
                                     placeholder="Nhập mã 6 số"
+                                    style={{ borderRadius: 8, fontSize: 13 }}
                                 />
                             </Form.Item>
 
@@ -151,8 +150,9 @@ const ForgotPasswordPage = () => {
                                 ]}
                             >
                                 <Input.Password
-                                    prefix={<LockOutlined />}
+                                    prefix={<LockOutlined className="text-slate-400" />}
                                     placeholder="Tối thiểu 6 ký tự"
+                                    style={{ borderRadius: 8, fontSize: 13 }}
                                 />
                             </Form.Item>
 
@@ -173,20 +173,20 @@ const ForgotPasswordPage = () => {
                                 ]}
                             >
                                 <Input.Password
-                                    prefix={<LockOutlined />}
+                                    prefix={<LockOutlined className="text-slate-400" />}
                                     placeholder="Nhập lại mật khẩu mới"
+                                    style={{ borderRadius: 8, fontSize: 13 }}
                                 />
                             </Form.Item>
 
                             <Form.Item>
-                                <Button type="primary" htmlType="submit" block loading={loading}>
+                                <Button type="primary" htmlType="submit" block loading={loading} style={{ borderRadius: 8, background: '#2563eb', border: 'none', height: 42, fontSize: 13, fontWeight: 700 }}>
                                     Đặt lại mật khẩu
                                 </Button>
                             </Form.Item>
                         </Form>
                     )}
 
-                    {/* Step 3: Hoàn tất */}
                     {currentStep === 2 && (
                         <Result
                             status="success"
@@ -194,7 +194,7 @@ const ForgotPasswordPage = () => {
                             subTitle="Bạn có thể đăng nhập với mật khẩu mới ngay bây giờ."
                             extra={[
                                 <Link to="/login" key="login">
-                                    <Button type="primary" size="large">
+                                    <Button type="primary" size="large" style={{ borderRadius: 8, background: '#2563eb', border: 'none', height: 40, fontSize: 13, fontWeight: 700 }}>
                                         Đăng nhập ngay
                                     </Button>
                                 </Link>
@@ -202,8 +202,8 @@ const ForgotPasswordPage = () => {
                         />
                     )}
 
-                    <div style={{ textAlign: 'center', marginTop: 16 }}>
-                        <Link to="/login">← Quay lại đăng nhập</Link>
+                    <div style={{ textAlign: 'center', marginTop: 16, fontSize: 12 }}>
+                        <Link to="/login" style={{ fontWeight: 700, color: '#2563eb' }}>&larr; Quay lại đăng nhập</Link>
                     </div>
                 </Card>
             </Col>

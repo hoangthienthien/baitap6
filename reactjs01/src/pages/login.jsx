@@ -27,7 +27,6 @@ const LoginPage = () => {
                     name: res?.user?.name ?? ""
                 }
             });
-            // Fetch giỏ hàng sau khi đăng nhập
             fetchCart();
             notification.success({
                 message: "Đăng nhập thành công",
@@ -44,17 +43,18 @@ const LoginPage = () => {
     };
 
     return (
-        <Row justify="center" align="middle" style={{ minHeight: '100vh', background: '#f0f2f5' }}>
+        <Row justify="center" align="middle" className="min-h-screen bg-[#f8fafc]">
             <Col xs={22} sm={16} md={12} lg={8} xl={6}>
                 <Card
                     style={{
-                        borderRadius: 12,
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+                        borderRadius: 16,
+                        boxShadow: '0 10px 30px -10px rgba(15, 23, 42, 0.08)',
+                        border: '1px solid #f1f5f9'
                     }}
                 >
                     <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                        <Title level={2} style={{ marginBottom: 4 }}>Đăng nhập</Title>
-                        <Text type="secondary">Nhập thông tin tài khoản để tiếp tục</Text>
+                        <Title level={3} style={{ marginBottom: 4, fontWeight: 800, tracking: '-0.025em' }}>Sign In</Title>
+                        <Text type="secondary" style={{ fontSize: 12, fontWeight: 600 }}>Nhập thông tin tài khoản để tiếp tục</Text>
                     </div>
 
                     <Form
@@ -72,8 +72,9 @@ const LoginPage = () => {
                             ]}
                         >
                             <Input
-                                prefix={<MailOutlined />}
+                                prefix={<MailOutlined className="text-slate-400" />}
                                 placeholder="your@email.com"
+                                style={{ borderRadius: 8, fontSize: 13 }}
                             />
                         </Form.Item>
 
@@ -83,29 +84,30 @@ const LoginPage = () => {
                             rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}
                         >
                             <Input.Password
-                                prefix={<LockOutlined />}
+                                prefix={<LockOutlined className="text-slate-400" />}
                                 placeholder="Nhập mật khẩu"
+                                style={{ borderRadius: 8, fontSize: 13 }}
                             />
                         </Form.Item>
 
-                        <Form.Item style={{ textAlign: 'right', marginBottom: 8 }}>
-                            <Link to="/forgot-password">Quên mật khẩu?</Link>
+                        <Form.Item style={{ textAlign: 'right', marginBottom: 12 }}>
+                            <Link to="/forgot-password" style={{ fontSize: 11, fontWeight: 700, color: '#2563eb' }}>Quên mật khẩu?</Link>
                         </Form.Item>
 
                         <Form.Item>
-                            <Button type="primary" htmlType="submit" block loading={loading}>
+                            <Button type="primary" htmlType="submit" block loading={loading} style={{ borderRadius: 8, background: '#2563eb', border: 'none', height: 42, fontSize: 13, fontWeight: 700 }}>
                                 Đăng nhập
                             </Button>
                         </Form.Item>
                     </Form>
 
                     <Divider plain>
-                        <Text type="secondary">Hoặc</Text>
+                        <Text type="secondary" style={{ fontSize: 11, fontWeight: 600 }}>Hoặc</Text>
                     </Divider>
 
-                    <div style={{ textAlign: 'center' }}>
-                        <Text>Chưa có tài khoản? </Text>
-                        <Link to="/register">Đăng ký ngay</Link>
+                    <div style={{ textAlign: 'center', fontSize: 12 }}>
+                        <Text type="secondary" style={{ fontWeight: 600 }}>Chưa có tài khoản? </Text>
+                        <Link to="/register" style={{ fontWeight: 700, color: '#2563eb' }}>Đăng ký ngay</Link>
                     </div>
                 </Card>
             </Col>

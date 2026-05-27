@@ -30,17 +30,18 @@ const RegisterPage = () => {
     };
 
     return (
-        <Row justify="center" align="middle" style={{ minHeight: '100vh', background: '#f0f2f5' }}>
+        <Row justify="center" align="middle" className="min-h-screen bg-[#f8fafc]">
             <Col xs={22} sm={16} md={12} lg={8} xl={6}>
                 <Card
                     style={{
-                        borderRadius: 12,
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+                        borderRadius: 16,
+                        boxShadow: '0 10px 30px -10px rgba(15, 23, 42, 0.08)',
+                        border: '1px solid #f1f5f9'
                     }}
                 >
                     <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                        <Title level={2} style={{ marginBottom: 4 }}>Đăng ký tài khoản</Title>
-                        <Text type="secondary">Tạo tài khoản mới để sử dụng hệ thống</Text>
+                        <Title level={3} style={{ marginBottom: 4, fontWeight: 800, tracking: '-0.025em' }}>Register</Title>
+                        <Text type="secondary" style={{ fontSize: 12, fontWeight: 600 }}>Tạo tài khoản mới để sử dụng hệ thống</Text>
                     </div>
 
                     <Form
@@ -55,8 +56,9 @@ const RegisterPage = () => {
                             rules={[{ required: true, message: 'Vui lòng nhập họ tên!' }]}
                         >
                             <Input
-                                prefix={<UserOutlined />}
+                                prefix={<UserOutlined className="text-slate-400" />}
                                 placeholder="Nguyễn Văn A"
+                                style={{ borderRadius: 8, fontSize: 13 }}
                             />
                         </Form.Item>
 
@@ -69,8 +71,9 @@ const RegisterPage = () => {
                             ]}
                         >
                             <Input
-                                prefix={<MailOutlined />}
+                                prefix={<MailOutlined className="text-slate-400" />}
                                 placeholder="your@email.com"
+                                style={{ borderRadius: 8, fontSize: 13 }}
                             />
                         </Form.Item>
 
@@ -83,8 +86,9 @@ const RegisterPage = () => {
                             ]}
                         >
                             <Input.Password
-                                prefix={<LockOutlined />}
+                                prefix={<LockOutlined className="text-slate-400" />}
                                 placeholder="Tối thiểu 6 ký tự"
+                                style={{ borderRadius: 8, fontSize: 13 }}
                             />
                         </Form.Item>
 
@@ -105,25 +109,26 @@ const RegisterPage = () => {
                             ]}
                         >
                             <Input.Password
-                                prefix={<LockOutlined />}
+                                prefix={<LockOutlined className="text-slate-400" />}
                                 placeholder="Nhập lại mật khẩu"
+                                style={{ borderRadius: 8, fontSize: 13 }}
                             />
                         </Form.Item>
 
                         <Form.Item>
-                            <Button type="primary" htmlType="submit" block loading={loading}>
+                            <Button type="primary" htmlType="submit" block loading={loading} style={{ borderRadius: 8, background: '#2563eb', border: 'none', height: 42, fontSize: 13, fontWeight: 700 }}>
                                 Đăng ký
                             </Button>
                         </Form.Item>
                     </Form>
 
                     <Divider plain>
-                        <Text type="secondary">Hoặc</Text>
+                        <Text type="secondary" style={{ fontSize: 11, fontWeight: 600 }}>Hoặc</Text>
                     </Divider>
 
-                    <div style={{ textAlign: 'center' }}>
-                        <Text>Đã có tài khoản? </Text>
-                        <Link to="/login">Đăng nhập ngay</Link>
+                    <div style={{ textAlign: 'center', fontSize: 12 }}>
+                        <Text type="secondary" style={{ fontWeight: 600 }}>Đã có tài khoản? </Text>
+                        <Link to="/login" style={{ fontWeight: 700, color: '#2563eb' }}>Đăng nhập ngay</Link>
                     </div>
                 </Card>
             </Col>
