@@ -173,15 +173,15 @@ export const OrderDetailPage = () => {
           <div className="space-y-3.5 text-[14px] text-slate-500 font-semibold">
             <div className="flex flex-col">
               <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Receiver Name</span>
-              <span className="text-indigo-950 mt-0.5">{order.fullName}</span>
+              <span className="text-indigo-950 mt-0.5">{order.shippingAddress?.fullName}</span>
             </div>
             <div className="flex flex-col">
               <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Phone Number</span>
-              <span className="text-indigo-950 mt-0.5">{order.phone}</span>
+              <span className="text-indigo-950 mt-0.5">{order.shippingAddress?.phone}</span>
             </div>
             <div className="flex flex-col">
               <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Address</span>
-              <span className="text-indigo-950 mt-0.5">{order.address}</span>
+              <span className="text-indigo-950 mt-0.5">{order.shippingAddress?.address}</span>
             </div>
             <div className="flex flex-col">
               <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Payment Method</span>
@@ -197,7 +197,7 @@ export const OrderDetailPage = () => {
           <div className="space-y-4 text-[14px] font-semibold text-slate-500">
             <div className="flex justify-between">
               <span>Items Subtotal</span>
-              <span className="text-indigo-950">{formatPrice(order.totalPrice * 0.92)}</span>
+              <span className="text-indigo-950">{formatPrice(order.totalAmount * 0.92)}</span>
             </div>
             <div className="flex justify-between">
               <span>Shipping Fee</span>
@@ -205,13 +205,13 @@ export const OrderDetailPage = () => {
             </div>
             <div className="flex justify-between">
               <span>VAT (8%)</span>
-              <span className="text-indigo-950">{formatPrice(order.totalPrice * 0.08)}</span>
+              <span className="text-indigo-950">{formatPrice(order.totalAmount * 0.08)}</span>
             </div>
 
             <div className="border-t border-slate-100 pt-4 flex justify-between items-baseline text-indigo-950">
               <span className="font-extrabold text-[15px]">Paid Amount</span>
               <span className="text-indigo-600 font-extrabold text-[22px] tracking-tight">
-                {formatPrice(order.totalPrice)}
+                {formatPrice(order.totalAmount)}
               </span>
             </div>
           </div>
@@ -229,12 +229,12 @@ export const OrderDetailPage = () => {
             >
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center p-2.5 shrink-0">
-                  <img src={item.image} alt={item.name} className="max-h-full max-w-full object-contain" />
+                  <img src={item.productImage} alt={item.productName} className="max-h-full max-w-full object-contain" />
                 </div>
                 <div className="text-left space-y-1">
-                  <h4 className="font-extrabold text-[14px] text-indigo-950 line-clamp-1">{item.name}</h4>
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">
-                    {item.color} | {item.storage}
+                  <h4 className="font-extrabold text-[14px] text-indigo-950 line-clamp-1">{item.productName}</h4>
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide text-slate-400">
+                    {item.color && item.storage ? `${item.color} | ${item.storage}` : 'Phiên bản tiêu chuẩn'}
                   </p>
                 </div>
               </div>

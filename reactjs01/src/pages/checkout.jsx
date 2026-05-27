@@ -26,10 +26,12 @@ export const CheckoutPage = () => {
     setIsSubmitting(true);
     try {
       const orderData = {
-        fullName: values.fullName,
-        phone: values.phone,
-        address: values.address,
-        paymentMethod: values.paymentMethod,
+        shippingAddress: {
+          fullName: values.fullName,
+          phone: values.phone,
+          address: values.address
+        },
+        paymentMethod: values.paymentMethod === 'E-Wallet' ? 'E_WALLET' : 'COD',
         items: cartItems.map(item => ({
           productId: item.productId?._id || item.productId,
           quantity: item.quantity,
@@ -43,10 +45,12 @@ export const CheckoutPage = () => {
       };
 
       const res = await createOrderAPI(orderData);
-      if (res) {
+      if (res && res.EC === 0) {
         message.success('Đặt hàng thành công! Đơn hàng đang được xử lý.');
         await clearCart();
         navigate('/orders');
+      } else {
+        message.error(res?.EM || 'Lỗi đặt hàng');
       }
     } catch (err) {
       message.error(err.message || 'Lỗi đặt hàng');

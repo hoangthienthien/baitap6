@@ -100,7 +100,7 @@ export const OrdersPage = () => {
                 <div className="text-left md:text-right">
                   <span className="block text-[12px] font-bold text-gray-400 uppercase tracking-wider">Total amount</span>
                   <span className="text-[18px] font-extrabold text-indigo-600 leading-tight">
-                    {formatPrice(order.totalPrice)}
+                    {formatPrice(order.totalAmount)}
                   </span>
                 </div>
 
