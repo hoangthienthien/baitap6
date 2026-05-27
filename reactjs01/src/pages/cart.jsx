@@ -91,24 +91,24 @@ export const CartPage = () => {
             <div className="space-y-4">
               {cartItems.map((item) => (
                 <div 
-                  key={item._id || item.productId} 
+                  key={item._id || item.productId?._id || item.productId} 
                   className="bg-white rounded-3xl border border-slate-100 p-5 flex flex-col sm:flex-row items-center justify-between gap-6 hover:shadow-md hover:shadow-slate-100/50 transition-all duration-300"
                 >
                   {/* Left part: Image + details */}
                   <div className="flex items-center gap-5 w-full sm:w-auto">
                     <div className="w-20 h-20 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center p-3 shrink-0">
                       <img 
-                        src={item.image} 
-                        alt={item.name} 
+                        src={item.productId?.images?.[0] || item.image} 
+                        alt={item.productId?.name || item.name} 
                         className="max-h-full max-w-full object-contain"
                       />
                     </div>
                     <div className="space-y-1.5 text-left">
                       <h4 className="font-extrabold text-[16px] text-indigo-950 leading-snug line-clamp-1">
-                        {item.name}
+                        {item.productId?.name || item.name}
                       </h4>
                       <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider">
-                        {item.color} | {item.storage}
+                        {item.color || 'Standard'} | {item.storage || '128GB'}
                       </p>
                     </div>
                   </div>
@@ -117,7 +117,7 @@ export const CartPage = () => {
                   <div className="flex items-center justify-between sm:justify-end gap-8 w-full sm:w-auto">
                     <div className="flex flex-col items-end sm:items-start">
                       <span className="text-[16px] font-extrabold text-indigo-950">
-                        {formatPrice(item.price)}
+                        {formatPrice(item.productId?.price || item.price || 0)}
                       </span>
                     </div>
 

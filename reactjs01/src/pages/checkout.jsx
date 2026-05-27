@@ -31,13 +31,13 @@ export const CheckoutPage = () => {
         address: values.address,
         paymentMethod: values.paymentMethod,
         items: cartItems.map(item => ({
-          productId: item.productId,
+          productId: item.productId?._id || item.productId,
           quantity: item.quantity,
-          name: item.name,
-          price: item.price,
-          image: item.image,
-          storage: item.storage,
-          color: item.color
+          name: item.productId?.name || item.name || 'Device',
+          price: item.productId?.price || item.price || 0,
+          image: item.productId?.images?.[0] || item.image || '',
+          storage: item.storage || '128GB',
+          color: item.color || 'Standard'
         })),
         totalPrice: grandTotal
       };
@@ -158,16 +158,22 @@ export const CheckoutPage = () => {
           {/* List of items */}
           <div className="space-y-4 max-h-60 overflow-y-auto pr-1">
             {cartItems.map((item) => (
-              <div key={item.productId} className="flex items-center gap-4 py-2 border-b border-slate-50 last:border-0">
+              <div key={item.productId?._id || item.productId} className="flex items-center gap-4 py-2 border-b border-slate-50 last:border-0">
                 <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center p-2 border border-slate-100">
-                  <img src={item.image} alt={item.name} className="max-h-full max-w-full object-contain" />
+                  <img 
+                    src={item.productId?.images?.[0] || item.image} 
+                    alt={item.productId?.name || item.name} 
+                    className="max-h-full max-w-full object-contain" 
+                  />
                 </div>
                 <div className="flex-1 min-w-0 text-[13px]">
-                  <h4 className="font-extrabold text-indigo-950 truncate">{item.name}</h4>
-                  <p className="text-slate-400 font-bold">{item.color} | Qty: {item.quantity}</p>
+                  <h4 className="font-extrabold text-indigo-950 truncate">
+                    {item.productId?.name || item.name}
+                  </h4>
+                  <p className="text-slate-400 font-bold">{item.color || 'Standard'} | Qty: {item.quantity}</p>
                 </div>
                 <span className="text-[13px] font-extrabold text-indigo-950">
-                  {formatPrice(item.price * item.quantity)}
+                  {formatPrice((item.productId?.price || item.price || 0) * item.quantity)}
                 </span>
               </div>
             ))}
