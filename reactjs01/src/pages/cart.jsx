@@ -1,14 +1,17 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CartContext } from '../components/context/cart.context';
 import { AuthContext } from '../components/context/auth.context';
+import { getBestSellerProductsApi } from '../util/api';
 import { formatPrice } from '../util/helpers';
 import { notification } from 'antd';
+import ProductCard from '../components/product/ProductCard';
 
 const CartPage = () => {
     const navigate = useNavigate();
     const { auth } = useContext(AuthContext);
     const { cartItems, cartCount, cartTotal, cartLoading, fetchCart, updateQuantity, removeItem, clearCart } = useContext(CartContext);
+    const [suggestions, setSuggestions] = useState([]);
 
     useEffect(() => {
         if (!auth.isAuthenticated) {
@@ -16,6 +19,11 @@ const CartPage = () => {
             return;
         }
         fetchCart();
+
+        // Fetch suggestions (You may also like)
+        getBestSellerProductsApi(4).then(res => {
+            if (res?.EC === 0) setSuggestions(res.data);
+        });
     }, []);
 
     const handleUpdateQuantity = async (productId, newQty) => {
@@ -42,10 +50,10 @@ const CartPage = () => {
 
     if (cartLoading) {
         return (
-            <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="flex items-center justify-center min-h-[60vh] bg-slate-50/50">
                 <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-500 rounded-full animate-spin"></div>
-                    <p className="text-gray-400 text-sm">Đang tải giỏ hàng...</p>
+                    <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
+                    <p className="text-slate-400 text-xs font-semibold">Đang tải giỏ hàng...</p>
                 </div>
             </div>
         );
@@ -53,100 +61,117 @@ const CartPage = () => {
 
     if (cartItems.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
-                <div className="w-32 h-32 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-full flex items-center justify-center">
-                    <svg className="w-16 h-16 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 bg-slate-50/20">
+                <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center">
+                    <svg className="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
                     </svg>
                 </div>
-                <div className="text-center">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Giỏ hàng trống</h2>
-                    <p className="text-gray-500 mb-6">Bạn chưa thêm sản phẩm nào vào giỏ hàng</p>
-                    <Link to="/search" className="px-8 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-200 transition-all">
-                        Mua sắm ngay
-                    </Link>
+                <div className="text-center space-y-2">
+                    <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">Your Cart is Empty</h2>
+                    <p className="text-slate-400 text-xs max-w-xs mx-auto">Bạn chưa thêm thiết bị nào vào giỏ hàng TechNexus.</p>
                 </div>
+                <Link to="/search" className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm hover:shadow-md transition-all">
+                    Start Shopping
+                </Link>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <div className="max-w-5xl mx-auto px-4 py-8">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-8">
+        <div className="min-h-screen bg-[#f8fafc] py-10">
+            <div className="max-w-6xl mx-auto px-4 md:px-6 space-y-12">
+                
+                {/* Title Section */}
+                <div className="pb-4 border-b border-slate-100 flex items-end justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-800">Giỏ hàng của bạn</h1>
-                        <p className="text-sm text-gray-500 mt-1">{cartCount} sản phẩm</p>
+                        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Your Cart</h1>
+                        <p className="text-slate-400 text-xs mt-1">Check your items and proceed to secure checkout.</p>
                     </div>
-                    <button onClick={handleClearCart} className="text-sm text-red-500 hover:text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg transition-colors">
-                        Xóa tất cả
+                    <button 
+                        onClick={handleClearCart} 
+                        className="text-xs font-bold text-red-500 hover:text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-premium cursor-pointer"
+                    >
+                        Remove All
                     </button>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Cart Items */}
-                    <div className="lg:col-span-2 space-y-4">
+                {/* 2-Column Cart Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    
+                    {/* Left Column: Cart Items List */}
+                    <div className="lg:col-span-8 space-y-4">
                         {cartItems.map((item) => {
                             const product = item.productId;
                             if (!product) return null;
+
+                            // Dynamic spec label parsing
+                            const specLabel = product.specs 
+                                ? `${product.specs.color || 'Titanium Gray'} | ${product.specs.storage || product.specs.type || '256GB'}` 
+                                : 'Default Config';
+
                             return (
-                                <div key={product._id} className="bg-white rounded-2xl border border-gray-100 p-4 flex gap-4 hover:shadow-md transition-shadow">
-                                    {/* Image */}
-                                    <Link to={`/product/${product.slug}`} className="shrink-0">
+                                <div 
+                                    key={product._id} 
+                                    className="bg-white rounded-2xl border border-slate-100 p-5 flex gap-5 hover:shadow-md transition-premium"
+                                >
+                                    {/* Item Image */}
+                                    <Link to={`/product/${product.slug}`} className="shrink-0 bg-slate-50 rounded-xl overflow-hidden w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center p-2">
                                         <img
                                             src={product.images?.[0] || 'https://via.placeholder.com/120'}
                                             alt={product.name}
-                                            className="w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-xl"
+                                            className="max-h-full max-w-full object-contain"
                                         />
                                     </Link>
 
-                                    {/* Info */}
-                                    <div className="flex-1 min-w-0">
-                                        <Link to={`/product/${product.slug}`} className="font-semibold text-gray-800 hover:text-indigo-600 transition-colors line-clamp-2 text-sm sm:text-base">
-                                            {product.name}
-                                        </Link>
-
-                                        <div className="flex items-end gap-2 mt-2">
-                                            <span className="text-lg font-bold text-red-500">{formatPrice(product.price)}</span>
-                                            {product.originalPrice > product.price && (
-                                                <span className="text-xs text-gray-400 line-through">{formatPrice(product.originalPrice)}</span>
-                                            )}
+                                    {/* Item Details */}
+                                    <div className="flex-1 flex flex-col justify-between min-w-0">
+                                        <div className="flex justify-between items-start gap-4">
+                                            <div>
+                                                <Link 
+                                                    to={`/product/${product.slug}`} 
+                                                    className="font-extrabold text-slate-800 hover:text-blue-600 transition-colors line-clamp-2 text-xs sm:text-sm tracking-tight"
+                                                >
+                                                    {product.name}
+                                                </Link>
+                                                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1">
+                                                    {specLabel}
+                                                </p>
+                                            </div>
+                                            <span className="text-sm font-extrabold text-blue-600 shrink-0">
+                                                {formatPrice(product.price)}
+                                            </span>
                                         </div>
 
-                                        {/* Quantity + Remove */}
-                                        <div className="flex items-center justify-between mt-3">
-                                            <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden">
+                                        {/* Actions: Qty Selector and Trash Button */}
+                                        <div className="flex items-center justify-between pt-2">
+                                            <div className="flex items-center bg-slate-50 border border-slate-200/80 rounded-lg overflow-hidden">
                                                 <button
                                                     onClick={() => handleUpdateQuantity(product._id, item.quantity - 1)}
-                                                    className="w-9 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors font-medium"
+                                                    className="w-8 h-8 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors text-sm font-bold cursor-pointer"
                                                 >−</button>
-                                                <span className="w-12 h-9 flex items-center justify-center text-sm font-medium border-x border-gray-200">
+                                                <span className="w-10 h-8 flex items-center justify-center text-xs font-bold text-slate-700">
                                                     {item.quantity}
                                                 </span>
                                                 <button
                                                     onClick={() => handleUpdateQuantity(product._id, item.quantity + 1)}
-                                                    className="w-9 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors font-medium"
+                                                    className="w-8 h-8 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors text-sm font-bold cursor-pointer"
                                                 >+</button>
                                             </div>
 
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-sm font-semibold text-gray-700 hidden sm:block">
-                                                    {formatPrice(product.price * item.quantity)}
-                                                </span>
-                                                <button
-                                                    onClick={() => handleRemove(product._id, product.name)}
-                                                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                    </svg>
-                                                </button>
-                                            </div>
+                                            <button
+                                                onClick={() => handleRemove(product._id, product.name)}
+                                                className="flex items-center gap-1 text-[11px] font-bold text-red-500 hover:text-red-600 hover:bg-red-50 px-2.5 py-1.5 rounded-lg transition-premium cursor-pointer"
+                                            >
+                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                                Remove
+                                            </button>
                                         </div>
 
                                         {product.stock <= 5 && product.stock > 0 && (
-                                            <p className="text-xs text-orange-500 mt-2">⚠️ Chỉ còn {product.stock} sản phẩm</p>
+                                            <p className="text-[9px] text-red-500 font-bold uppercase tracking-wider mt-1.5">⚠️ Chỉ còn {product.stock} thiết bị</p>
                                         )}
                                     </div>
                                 </div>
@@ -154,41 +179,77 @@ const CartPage = () => {
                         })}
                     </div>
 
-                    {/* Order Summary */}
-                    <div className="lg:col-span-1">
-                        <div className="bg-white rounded-2xl border border-gray-100 p-6 sticky top-24">
-                            <h3 className="text-lg font-bold text-gray-800 mb-4">Tóm tắt đơn hàng</h3>
+                    {/* Right Column: Order Summary */}
+                    <div className="lg:col-span-4">
+                        <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-6 shadow-sm sticky top-24">
+                            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Order Summary</h3>
 
-                            <div className="space-y-3 mb-6">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Tạm tính ({cartCount} sản phẩm)</span>
-                                    <span className="font-medium text-gray-700">{formatPrice(cartTotal)}</span>
+                            <div className="space-y-3.5 text-xs font-medium text-slate-500 pb-4 border-b border-slate-100">
+                                <div className="flex justify-between">
+                                    <span>Subtotal</span>
+                                    <span className="text-slate-800 font-bold">{formatPrice(cartTotal)}</span>
                                 </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Phí vận chuyển</span>
-                                    <span className="font-medium text-emerald-600">Miễn phí</span>
+                                <div className="flex justify-between">
+                                    <span>Estimated Shipping</span>
+                                    <span className="text-emerald-500 font-bold uppercase tracking-wider">FREE</span>
                                 </div>
-                                <div className="border-t border-gray-100 pt-3">
-                                    <div className="flex justify-between">
-                                        <span className="font-semibold text-gray-800">Tổng cộng</span>
-                                        <span className="text-xl font-bold text-red-500">{formatPrice(cartTotal)}</span>
-                                    </div>
+                                <div className="flex justify-between">
+                                    <span>Tax</span>
+                                    <span className="text-slate-800 font-bold">{formatPrice(cartTotal * 0.1)}</span>
                                 </div>
                             </div>
 
+                            <div className="flex justify-between items-baseline">
+                                <span className="text-sm font-bold text-slate-800 uppercase tracking-wider">Total</span>
+                                <span className="text-xl font-extrabold text-blue-600">{formatPrice(cartTotal * 1.1)}</span>
+                            </div>
+
+                            {/* Promo Code Input */}
+                            <div className="space-y-2 pt-2">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Promo Code</label>
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        placeholder="Enter code" 
+                                        className="flex-1 px-3.5 py-2 bg-slate-50 text-xs rounded-lg outline-none border border-slate-200/80 focus:border-blue-500 focus:bg-white transition-colors"
+                                    />
+                                    <button className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold rounded-lg transition-premium cursor-pointer">
+                                        Apply
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Proceed to Checkout */}
                             <button
                                 onClick={() => navigate('/checkout')}
-                                className="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-200 transition-all"
+                                className="w-full flex items-center justify-center gap-2 py-3.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer"
                             >
-                                Tiến hành thanh toán
+                                Proceed to Checkout &rarr;
                             </button>
 
-                            <Link to="/search" className="block text-center text-sm text-indigo-600 hover:text-indigo-700 mt-4 transition-colors">
-                                ← Tiếp tục mua sắm
-                            </Link>
+                            {/* SSL Encryption Badge */}
+                            <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 font-bold tracking-wide uppercase pt-1">
+                                <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                Secure SSL Encryption
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                {/* You may also like suggestions section */}
+                {suggestions.length > 0 && (
+                    <div className="space-y-6 pt-6 border-t border-slate-100">
+                        <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">You may also like</h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {suggestions.map((p) => (
+                                <ProductCard key={p._id} product={p} variant="home" />
+                            ))}
+                        </div>
+                    </div>
+                )}
+                
             </div>
         </div>
     );
